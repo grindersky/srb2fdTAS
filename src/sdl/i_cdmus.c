@@ -30,7 +30,7 @@ void I_PlayCD(int track, boolean looping)
 	(void)looping;
 }
 
-boolean I_SetVolumeCD(int volume)
+int I_SetVolumeCD(int volume)
 {
 	(void)volume;
 	return false;

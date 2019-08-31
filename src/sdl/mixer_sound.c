@@ -496,7 +496,7 @@ void I_StopSound(INT32 handle)
 	Mix_HaltChannel(handle);
 }
 
-boolean I_SoundIsPlaying(INT32 handle)
+int I_SoundIsPlaying(INT32 handle)
 {
 	return Mix_Playing(handle);
 }
