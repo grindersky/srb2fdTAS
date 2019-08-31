@@ -18,7 +18,6 @@
 /// \brief Main program, simply calls D_SRB2Main and D_SRB2Loop, the high level loop.
 
 #include "../doomdef.h"
-
 #include "../m_argv.h"
 #include "../d_main.h"
 #include "../i_system.h"
@@ -27,27 +26,25 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_SDL
+
+#ifdef HAVE_TTF
+#include "SDL.h"
+#include "i_ttf.h"
+#endif
+
+#if defined (_WIN32) && !defined (main)
+//#define SDLMAIN
+#endif
+
 #ifdef SDLMAIN
 #include "SDL_main.h"
+#elif defined(FORCESDLMAIN)
+extern int SDL_main(int argc, char *argv[]);
 #endif
 
 #ifdef LOGMESSAGES
-#ifdef SDLIO
-#undef INVALID_HANDLE_VALUE
-#define INVALID_HANDLE_VALUE NULL
-SDL_RWops *logstream = INVALID_HANDLE_VALUE;
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#ifndef INVALID_HANDLE_VALUE
-#define INVALID_HANDLE_VALUE -1
-#endif
-
-/**	\brief low-level file handle to log file
-*/
-int logstream = INVALID_HANDLE_VALUE;
-#endif
+FILE *logstream = NULL;
 #endif
 
 #ifndef DOXYGEN
@@ -60,20 +57,44 @@ int logstream = INVALID_HANDLE_VALUE;
 #endif
 #endif
 
-#if defined (_WIN32) && !defined (_XBOX)
-typedef BOOL (WINAPI *MyFunc)(VOID);
+#if defined (_WIN32)
+#include "../win32/win_dbg.h"
+typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #endif
 
-#ifdef _arch_dreamcast
-#include <arch/arch.h>
-KOS_INIT_FLAGS(INIT_DEFAULT
-//| INIT_NET
-//| INIT_MALLOCSTATS
-//| INIT_QUIET
-//| INIT_OCRAM
-//| INIT_NO_DCLOAD
-);
+#if defined (_WIN32)
+static inline VOID MakeCodeWritable(VOID)
+{
+#ifdef USEASM // Disable write-protection of code segment
+	DWORD OldRights;
+	const DWORD NewRights = PAGE_EXECUTE_READWRITE;
+	PBYTE pBaseOfImage = (PBYTE)GetModuleHandle(NULL);
+	PIMAGE_DOS_HEADER dosH =(PIMAGE_DOS_HEADER)pBaseOfImage;
+	PIMAGE_NT_HEADERS ntH = (PIMAGE_NT_HEADERS)(pBaseOfImage + dosH->e_lfanew);
+	PIMAGE_OPTIONAL_HEADER oH = (PIMAGE_OPTIONAL_HEADER)
+		((PBYTE)ntH + sizeof (IMAGE_NT_SIGNATURE) + sizeof (IMAGE_FILE_HEADER));
+	LPVOID pA = pBaseOfImage+oH->BaseOfCode;
+	SIZE_T pS = oH->SizeOfCode;
+#if 1 // try to find the text section
+	PIMAGE_SECTION_HEADER ntS = IMAGE_FIRST_SECTION (ntH);
+	WORD s;
+	for (s = 0; s < ntH->FileHeader.NumberOfSections; s++)
+	{
+		if (memcmp (ntS[s].Name, ".text\0\0", 8) == 0)
+		{
+			pA = pBaseOfImage+ntS[s].VirtualAddress;
+			pS = ntS[s].Misc.VirtualSize;
+			break;
+		}
+	}
 #endif
+
+	if (!VirtualProtect(pA,pS,NewRights,&OldRights))
+		I_Error("Could not make code writable\n");
+#endif
+}
+#endif
+
 
 /**	\brief	The main function
 
@@ -81,17 +102,11 @@ KOS_INIT_FLAGS(INIT_DEFAULT
 	\param	*argv	string table
 
 	\return	int
-
-	
 */
-FUNCNORETURN
-#if defined (_XBOX) && defined (__GNUC__)
-void XBoxStartup()
-{
-	const char *logdir = NULL;
-	myargc = -1;
-	myargv = NULL;
-#else
+#if defined (__GNUC__) && (__GNUC__ >= 4)
+#pragma GCC diagnostic ignored "-Wmissing-noreturn"
+#endif
+
 #ifdef FORCESDLMAIN
 int SDL_main(int argc, char **argv)
 #else
@@ -101,86 +116,60 @@ int main(int argc, char **argv)
 	const char *logdir = NULL;
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
+
+#ifdef HAVE_TTF
+#ifdef _WIN32
+	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO|SDL_INIT_AUDIO, SDL_SWSURFACE);
+#else
+	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, SDL_SWSURFACE);
+#endif
 #endif
 
 	logdir = D_Home();
+
 #ifdef LOGMESSAGES
-#ifdef SDLIO
-#ifdef _WIN32_WCE
-	logstream = SDL_RWFromFile("/Storage Card/SRB2DEMO/srb2log.txt", "a+");
-#else
 #ifdef DEFAULTDIR
 	if (logdir)
-	{
-		logstream = SDL_RWFromFile(va("%s/"DEFAULTDIR"/srb2log.txt",logdir), "a+");
-	}
-	if (logdir == INVALID_HANDLE_VALUE)
+		logstream = fopen(va("%s/"DEFAULTDIR"/log.txt",logdir), "wt");
+	else
 #endif
-#ifdef _arch_dreamcast
-		//logstream = SDL_RWFromFile("/pc/tmp/srb2log.txt", "a+");
-#else
-		logstream = SDL_RWFromFile("./srb2log.txt", "a+");
+		logstream = fopen("./log.txt", "wt");
 #endif
-#endif	
-#else
-	//unlink("./srb2log.txt"); //Alam: poo! why can't open TRUNC the log file?
-	//Hurdler: only write log if we have the permission in the current directory
-#ifndef _XBOX
-#ifdef _arch_dreamcast
-	//logstream = open("/pc/tmp/srb2log.txt", O_WRONLY|(0?O_APPEND:O_TRUNC)|O_CREAT|O_SEQUENTIAL|O_TEXT,0666);
-#else
-	logstream = open("./srb2log.txt", O_WRONLY|(0?O_APPEND:O_TRUNC)|O_CREAT|O_SEQUENTIAL|O_TEXT,0666);
-#endif
-#endif
-	if (logstream < 0)
-	{
-		logstream = INVALID_HANDLE_VALUE; // so we haven't to change the current source code
-	}
-#endif
-#endif
-	//CONS_Printf ("I_StartupSystem() ...\n");
+
+	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
-#if (defined (_WIN32) || defined (_WIN64)) && !(defined (_XBOX) || defined (_WIN32_WCE))
-#ifdef _WIN32
+#if defined (_WIN32)
 	{
-		HINSTANCE h = LoadLibraryA("kernel32.dll");
-		MyFunc pfnIsDebuggerPresent = NULL;
-		if (h)
-		{
-			pfnIsDebuggerPresent = (MyFunc)GetProcAddress(h,"IsDebuggerPresent");
-			FreeLibrary(h);
-		}
-		if (pfnIsDebuggerPresent)
-		{
-			if (!pfnIsDebuggerPresent())
-				LoadLibrary("exchndl.dll");
-		}
-		else
-			LoadLibrary("exchndl.dll");
-	}
+#if 0 // just load the DLL
+		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsDebuggerPresent");
+		if ((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
+#ifdef BUGTRAP
+			&& !InitBugTrap()
 #endif
-#ifdef USEASM
-	{
-		// Disable write-protection of code segment
-		DWORD OldRights;
-		BYTE *pBaseOfImage = (BYTE *)GetModuleHandle(NULL);
-		IMAGE_OPTIONAL_HEADER *pHeader = (IMAGE_OPTIONAL_HEADER *)
-			(pBaseOfImage + ((IMAGE_DOS_HEADER*)pBaseOfImage)->e_lfanew +
-			sizeof (IMAGE_NT_SIGNATURE) + sizeof (IMAGE_FILE_HEADER));
-		if (!VirtualProtect(pBaseOfImage+pHeader->BaseOfCode,pHeader->SizeOfCode,PAGE_EXECUTE_READWRITE,&OldRights))
-			I_Error ("Could not make code writable\n");
-	}
+			)
 #endif
+		{
+			LoadLibraryA("exchndl.dll");
+		}
+	}
+#ifndef __MINGW32__
+	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
+#endif
+	MakeCodeWritable();
 #endif
 	// startup SRB2
-	CONS_Printf ("Setting up SRB2...\n");
+	CONS_Printf("Setting up SRB2...\n");
 	D_SRB2Main();
-	CONS_Printf ("Entering main game loop...\n");
+	CONS_Printf("Entering main game loop...\n");
 	// never return
 	D_SRB2Loop();
 
-	// return to OS
-#ifndef __GNUC__
-	return 0;
+#ifdef BUGTRAP
+	// This is safe even if BT didn't start.
+	ShutdownBugTrap();
 #endif
+
+	// return to OS
+	return 0;
 }
+#endif

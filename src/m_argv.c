@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -31,6 +31,10 @@ int myargc;
 */
 char **myargv;
 
+/** \brief did we alloc myargv ourselves?
+*/
+boolean myargmalloc = false;
+
 /**	\brief founded the parm
 */
 static int found;
@@ -42,7 +46,7 @@ static int found;
 
 	\return	number (1 to argc-1) or 0 if not present
 
-	
+
 */
 int M_CheckParm(const char *check)
 {

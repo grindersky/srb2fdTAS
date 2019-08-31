@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -533,6 +533,9 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_sleep);
 
 	CV_RegisterVar(&cv_dummyconsvar);
+#if defined (HAVE_SDL)
+	COM_AddCommand("sdlver", Command_SDLVer_f);
+#endif
 }
 
 // =========================================================================
@@ -1828,7 +1831,7 @@ static void Got_Mapcmd(char **cp, int playernum)
 	if (gametype == GTF_TEAMMATCH)
 	{
 		gametype = GT_MATCH;
-		
+
 		if (server)
 			CV_SetValue(&cv_teamplay, 1);
 	}
@@ -2427,7 +2430,7 @@ static void Got_RunSOCcmd(char **cp, int playernum)
 		}
 		return;
 	}
-	
+
 	strncpy(filename, *cp, 255);
 	SKIPSTRING(*cp);
 	(*cp)++;
@@ -2499,7 +2502,7 @@ static void Command_Addfile(void)
 		unsigned char md5sum[16] = "";
 #ifndef NOMD5
 		FILE *fhandle;
-		
+
 
 		fhandle = fopen(fn, "rb");
 
@@ -3542,7 +3545,7 @@ static void Mute_OnChange(void)
   * commands and change consvars, especially on game start. This is problematic
   * because CV_ClearChangedFlags() needs to get called on game start \b after
   * all those commands are run.
-  * 
+  *
   * Here's how it's done: the last thing in COM_BufAddText() is "dummyconsvar
   * 1", so we end up here, where dummyconsvar is reset to 0 and all the changed
   * flags are set to 0.

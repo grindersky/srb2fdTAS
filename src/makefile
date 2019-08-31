@@ -95,7 +95,7 @@ NOASM=1
 NOIPX=1
 EXENAME=srb2dummy
 OPTS += -DUNIXLIKE
-OBJS=$(OBJDIR)/i_video.o 
+OBJS=$(OBJDIR)/i_video.o
 LIBS=-lm
 endif
 
@@ -120,7 +120,13 @@ UNIXLIKE=1
 endif
 
 ifdef SDL
-include sdl/makefile.cfg
+#SDL 2.0
+ifndef SDL12
+	include sdl/Makefile.cfg
+#SDL 1.2
+else
+	include sdl12/Makefile.cfg
+endif #ifndef SDL12
 endif #ifdef SDL
 
 ifdef NONET
@@ -168,18 +174,25 @@ endif
 endif
 
 ifndef NOPNG
-OPTS := $(OPTS) -DHAVE_PNG
-ifndef NO_PNG_CONFIG
-PNG_CONFIG ?= libpng-config
-PNG_CFLAGS := $(shell $(PNG_CONFIG) --cflags)
-PNG_LDFLAGS := $(shell $(PNG_CONFIG) --libs)
-endif
-LIBS := $(PNG_LDFLAGS) $(LIBS)
-CFLAGS := $(PNG_CFLAGS) $(CFLAGS)
+OPTS+=-DHAVE_PNG
 
-ifndef NOMNG
-#OPTS := $(OPTS) -DHAVE_MNG
-#LIBS := -lmng $(LIBS)
+ifdef PNG_PKGCONFIG
+PNG_CFLAGS?=$(shell $(PKG_CONFIG) $(PNG_PKGCONFIG) --cflags)
+PNG_LDFLAGS?=$(shell $(PKG_CONFIG) $(PNG_PKGCONFIG) --libs)
+else
+ifdef PREFIX
+PNG_CONFIG?=$(PREFIX)-libpng-config
+else
+PNG_CONFIG?=libpng-config
+endif
+
+ifdef PNG_STATIC
+PNG_CFLAGS?=$(shell $(PNG_CONFIG) --static --cflags)
+PNG_LDFLAGS?=$(shell $(PNG_CONFIG) --static --ldflags)
+else
+PNG_CFLAGS?=$(shell $(PNG_CONFIG) --cflags)
+PNG_LDFLAGS?=$(shell $(PNG_CONFIG) --ldflags)
+endif
 endif
 endif
 
@@ -205,7 +218,7 @@ else
 
 	# build a normal optimised version
 	WINDRESFLAGS = -DNDEBUG
-	CFLAGS += $(OPTS) $(M5) -Os $(WINDRESFLAGS)
+	CFLAGS += $(OPTS) $(M5) -O3 $(WINDRESFLAGS)
 		# -fgcse -fcse-follow-jumps -fcse-skip-blocks -frerun-cse-after-loop -ffunction-cse \
 		# -fexpensive-optimizations -fforce-mem -fstrength-reduce -fthread-jumps  \
 		# -fregmove -fschedule-insns -fschedule-insns2 -fmove-all-movables \
@@ -349,7 +362,7 @@ asm:
 # executable
 
 $(BIN)/$(EXENAME): $(OBJS) $(OBJDIR)/d_netcmd.o
-	@mkdir -p $(BIN)
+	-$(MKDIR) $(BIN)
 	@echo Linking $(EXENAME)...
 	$(CC) $(LDFLAGS) $(OBJS) $(OBJDIR)/d_netcmd.o \
 	-o $(BIN)/$(EXENAME) $(LIBS)
@@ -386,11 +399,11 @@ all_dll: fmod_so openal_so
 
 fmod_so: $(OBJDIR)/s_fmod.o
 	@echo Linking S_FMOD.so...
-	$(CC) $(CFLAGS) -Os -o $(BIN)/s_fmod.so -shared -nostartfiles $(OBJDIR)/s_fmod.o -L. -lfmod -lm
+	$(CC) $(CFLAGS) -O3 -o $(BIN)/s_fmod.so -shared -nostartfiles $(OBJDIR)/s_fmod.o -L. -lfmod -lm
 
 openal_so: $(OBJDIR)/s_openal.o
 	@echo Linking S_OpenAL.so...
-	$(CC) $(CFLAGS) -Os -o $(BIN)/s_openal.so -shared -nostartfiles $(OBJDIR)/s_openal.o -lopenal -lm
+	$(CC) $(CFLAGS) -O3 -o $(BIN)/s_openal.so -shared -nostartfiles $(OBJDIR)/s_openal.o -lopenal -lm
 
 endif
 
@@ -518,15 +531,15 @@ endif
 ifndef NOHS
 $(OBJDIR)/s_ds3d.o: hardware/s_ds3d/s_ds3d.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -Os -o $(OBJDIR)/s_ds3d.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_ds3d/s_ds3d.c
+	$(CC) $(M5) -O3 -o $(OBJDIR)/s_ds3d.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_ds3d/s_ds3d.c
 
 $(OBJDIR)/s_fmod.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -Os -o $(OBJDIR)/s_fmod.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_fmod/s_fmod.c
+	$(CC) $(M5) -O3 -o $(OBJDIR)/s_fmod.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_fmod/s_fmod.c
 
 $(OBJDIR)/s_openal.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -Os -o $(OBJDIR)/s_openal.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_openal/s_openal.c
+	$(CC) $(M5) -O3 -o $(OBJDIR)/s_openal.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_openal/s_openal.c
 endif
 endif
 endif
@@ -550,11 +563,11 @@ else
 
 $(OBJDIR)/s_fmod.o: hardware/s_fmod/s_fmod.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -Os -o $(OBJDIR)/s_fmod.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_fmod/s_fmod.c
+	$(CC) $(M5) -O3 -o $(OBJDIR)/s_fmod.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_fmod/s_fmod.c
 
 $(OBJDIR)/s_openal.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -Os -o $(OBJDIR)/s_openal.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_openal/s_openal.c
+	$(CC) $(M5) -O3 -o $(OBJDIR)/s_openal.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_openal/s_openal.c
 endif
 
 ifndef NOFILTERS

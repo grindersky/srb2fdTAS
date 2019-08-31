@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -20,6 +20,50 @@
 
 #ifndef __DOOMDEF__
 #define __DOOMDEF__
+
+// Sound system select
+// This should actually be in the makefile,
+// but I can't stand that gibberish. D:
+#define SOUND_DUMMY   0
+#define SOUND_SDL     1
+#define SOUND_MIXER   2
+#define SOUND_FMOD    3
+
+#ifndef SOUND
+#ifdef HAVE_SDL
+
+// Use Mixer interface?
+#ifdef HAVE_MIXER
+    //#if !defined(DC) && !defined(_WIN32_WCE) && !defined(_XBOX) && !defined(GP2X)
+    #define SOUND SOUND_MIXER
+    #define NOHS // No HW3SOUND
+    #ifdef HW3SOUND
+    #undef HW3SOUND
+    #endif
+    //#endif
+#endif
+
+// Use generic SDL interface.
+#ifndef SOUND
+#define SOUND SOUND_SDL
+#endif
+
+#else // No SDL.
+
+// Use FMOD?
+#ifdef HAVE_FMOD
+    #define SOUND SOUND_FMOD
+    #define NOHS // No HW3SOUND
+    #ifdef HW3SOUND
+    #undef HW3SOUND
+    #endif
+#else
+    // No more interfaces. :(
+    #define SOUND SOUND_DUMMY
+#endif
+
+#endif
+#endif
 
 #ifdef _WINDOWS
 #if !defined (HWRENDER) && !defined (NOHW)
@@ -96,7 +140,7 @@
 extern SDL_RWops *logstream;
 #else
 #define INVALID_HANDLE_VALUE -1
-extern int logstream;
+extern FILE *logstream;
 #endif
 #endif
 
@@ -127,6 +171,7 @@ extern int logstream;
 #define OLDTICRATE 35
 #define NEWTICRATERATIO 1 // try 4 for 140 fps :)
 #define TICRATE (OLDTICRATE*NEWTICRATERATIO)
+#define NEWTICRATE (TICRATE*NEWTICRATERATIO)
 
 #define RING_DIST 512*FRACUNIT // how close you need to be to a ring to attract it
 #define NIGHTS_DRAW_DIST 1536*FRACUNIT
@@ -152,7 +197,7 @@ extern int logstream;
 
 	\return	void
 
-	
+
 */
 void I_Error(const char *error, ...) FUNCIERROR;
 
@@ -166,6 +211,10 @@ char *va(const char *format, ...) FUNCPRINTF;
 
 // d_main.c
 extern boolean devparm; // development mode (-debug)
+
+// Modifier key variables, accessible anywhere
+extern UINT8 shiftdown, altdown;
+extern boolean capslock;
 
 // =======================
 // Misc stuff for later...

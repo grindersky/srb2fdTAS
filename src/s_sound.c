@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -648,11 +648,11 @@ void S_StopSound(void *origin)
 void S_PauseSound(void)
 {
 	if (!nofmod)
-		I_PauseSong(0);
+		I_PauseSong();
 
 	if (mus_playing && !mus_paused)
 	{
-		I_PauseSong(mus_playing->handle);
+		I_PauseSong();
 		mus_paused = true;
 	}
 
@@ -667,11 +667,11 @@ void S_PauseSound(void)
 void S_ResumeSound(void)
 {
 	if (!nofmod)
-		I_ResumeSong(0);
+		I_ResumeSong();
 	else
 	if (mus_playing && mus_paused)
 	{
-		I_ResumeSong(mus_playing->handle);
+		I_ResumeSong();
 		mus_paused = false;
 	}
 
@@ -766,13 +766,13 @@ void S_UpdateSounds(void)
 				if (S_sfx[i].usefulness == 0)
 				{
 					S_sfx[i].usefulness--;
-	
+
 					// don't forget to unlock it !!!
 					// __dmpi_unlock_....
 					//Z_ChangeTag(S_sfx[i].data, PU_CACHE);
 					I_FreeSfx(S_sfx+i);
 					//S_sfx[i].data = 0;
-	
+
 					CONS_Printf("\2flushed sfx %.6s\n", S_sfx[i].name);
 				}
 			}
@@ -926,7 +926,7 @@ static boolean S_MIDIMusic(musicinfo_t *music, int looping)
 #endif
 
 	// play it
-	if (!I_PlaySong(music->handle, looping))
+	if (!I_PlaySong(looping))
 		return false;
 
 	mus_playing = music;
@@ -990,12 +990,12 @@ void S_StopMusic(void)
  		return;
 
 	if (mus_paused)
-		I_ResumeSong(mus_playing->handle);
+		I_ResumeSong();
 
 	if (!nofmod)
 		I_StopDigSong();
 
-	I_StopSong(mus_playing->handle);
+	I_StopSong();
 	I_UnRegisterSong(mus_playing->handle);
 
 #ifndef SDL //SDL uses RWOPS
@@ -1126,7 +1126,7 @@ int S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, int *vol, 
 	// Taunts, deaths, etc, should all be heard louder.
 	if (sfxinfo->pitch & SF_X8AWAYSOUND)
 		approx_dist = FixedDiv(approx_dist,8*FRACUNIT);
-	
+
 	// Combine 8XAWAYSOUND with 4XAWAYSOUND and get.... 32XAWAYSOUND?
 	if (sfxinfo->pitch & SF_X4AWAYSOUND)
 		approx_dist = FixedDiv(approx_dist,4*FRACUNIT);

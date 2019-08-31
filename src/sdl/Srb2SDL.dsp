@@ -45,16 +45,16 @@ MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G5 /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "..\..\tools\libpng-src" /I "..\..\tools\zlib" /D "NDEBUG" /D "SDLMAIN" /D "NO_STDIO_REDIRECT" /D "USE_WGL_SWAP" /D "DIRECTFULLSCREEN" /D "SDL" /D "HWRENDER" /D "HW3SOUND" /D "HAVE_FILTER" /D "HAVE_MIXER" /D "USEASM" /D "HAVE_PNG" /FR /FD /GF /c
+# ADD CPP /nologo /G5 /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "..\..\libs\libpng-src" /I "..\..\libs\zlib" /D "NDEBUG" /D "SDLMAIN" /D "NO_STDIO_REDIRECT" /D "USE_WGL_SWAP" /D "DIRECTFULLSCREEN" /D "HAVE_SDL" /D "HWRENDER" /D "HW3SOUND" /D "HAVE_FILTER" /D "HAVE_MIXER" /D "USEASM" /D "HAVE_PNG" /FR /FD /GF /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 # SUBTRACT RSC /x
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o"..\..\objs\SDL\Release\DoomLegacy.bsc"
+# ADD BSC32 /nologo /o"..\..\objs\SDL\Release\SRB2.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 SDL.lib SDL_mixer.lib user32.lib advapi32.lib opengl32.lib glu32.lib wsock32.lib /nologo /subsystem:windows /pdb:"c:\srb2demo2\srb2sdl.pdb" /debug /machine:I386 /out:"c:\srb2demo2\srb2sdl.exe"
+# ADD LINK32 SDL.lib SDL_mixer.lib user32.lib advapi32.lib ws2_32.lib /nologo /subsystem:windows /pdb:"C:\srb2demo2\srb2sdl.pdb" /debug /machine:I386 /out:"C:\srb2demo2\srb2sdl.exe"
 # SUBTRACT LINK32 /profile /pdb:none /incremental:yes
 
 !ELSEIF  "$(CFG)" == "Srb2SDL - Win32 Debug"
@@ -72,17 +72,17 @@ LINK32=link.exe
 # PROP Target_Dir ""
 MTL=midl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /G6 /W4 /Gm /GX /ZI /Od /Op /I "..\..\tools\libpng-src" /I "..\..\tools\zlib" /D "_DEBUG" /D "USE_WGL_SWAP" /D "DIRECTFULLSCREEN" /D "SDL" /D "HWRENDER" /D "HW3SOUND" /D "HAVE_FILTER" /D "HAVE_MIXER" /D "USEASM" /D "HAVE_PNG" /FR /FD /GZ /c
+# ADD CPP /nologo /G6 /W4 /WX /Gm /GX /ZI /Od /Op /I "..\..\libs\libpng-src" /I "..\..\libs\zlib" /D "_DEBUG" /D "USE_WGL_SWAP" /D "DIRECTFULLSCREEN" /D "HAVE_SDL" /D "HWRENDER" /D "HW3SOUND" /D "HAVE_FILTER" /D "HAVE_MIXER" /D "USEASM" /D "HAVE_PNG" /FR /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 # SUBTRACT RSC /x
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o"..\..\objs\SDL\Debug/wLegacy.bsc"
+# ADD BSC32 /nologo /o"..\..\objs\SDL\Debug\SRB2.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 SDL.lib SDL_mixer.lib user32.lib advapi32.lib opengl32.lib glu32.lib wsock32.lib /nologo /subsystem:console /pdb:"c:\srb2demo2\srb2sdldebug.pdb" /debug /machine:I386 /out:"c:\srb2demo2\srb2sdldebug.exe" /pdbtype:sept
+# ADD LINK32 SDL.lib SDL_mixer.lib user32.lib advapi32.lib ws2_32.lib /nologo /subsystem:console /pdb:"C:\srb2demo2\srb2sdldebug.pdb" /debug /machine:I386 /out:"C:\srb2demo2\srb2sdldebug.exe" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -227,15 +227,6 @@ SOURCE=..\win32\Srb2win.rc
 # Begin Source File
 
 SOURCE=..\win32\win_dbg.c
-
-!IF  "$(CFG)" == "Srb2SDL - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Srb2SDL - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -266,7 +257,7 @@ InputPath=..\tmap.nas
 InputName=tmap
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -279,7 +270,7 @@ InputPath=..\tmap.nas
 InputName=tmap
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -299,7 +290,7 @@ InputPath=..\tmap_mmx.nas
 InputName=tmap_mmx
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -307,12 +298,13 @@ InputName=tmap_mmx
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Compiling $(InputName).nas with NASM...
+
 IntDir=.\..\..\objs\VC\Debug\SDL
 InputPath=..\tmap_mmx.nas
 InputName=tmap_mmx
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -331,7 +323,7 @@ InputPath=..\tmap_vc.nas
 InputName=tmap_vc
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -343,7 +335,7 @@ InputPath=..\tmap_vc.nas
 InputName=tmap_vc
 
 "$(IntDir)/$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
+	nasm -g -o $(IntDir)/$(InputName).obj -f win32 $(InputPath)
 
 # End Custom Build
 
@@ -365,10 +357,6 @@ SOURCE=..\d_clisrv.c
 # Begin Source File
 
 SOURCE=..\d_clisrv.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\d_englsh.h
 # End Source File
 # Begin Source File
 
@@ -441,14 +429,6 @@ SOURCE=..\doomstat.h
 # Begin Source File
 
 SOURCE=..\doomtype.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\dstrings.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\dstrings.h
 # End Source File
 # Begin Source File
 
@@ -712,6 +692,10 @@ SOURCE=..\m_cheat.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\m_dllist.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\m_fixed.c
 # End Source File
 # Begin Source File
@@ -733,6 +717,14 @@ SOURCE=..\m_misc.c
 # Begin Source File
 
 SOURCE=..\m_misc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\m_queue.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\m_queue.h
 # End Source File
 # Begin Source File
 
@@ -809,6 +801,14 @@ SOURCE=..\p_mobj.c
 # Begin Source File
 
 SOURCE=..\p_mobj.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\p_polyobj.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\p_polyobj.h
 # End Source File
 # Begin Source File
 
@@ -1004,6 +1004,14 @@ SOURCE=..\sounds.h
 # Begin Group "W_Wad"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\lzf.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\lzf.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\md5.c

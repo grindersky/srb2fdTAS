@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -642,7 +642,7 @@ void HU_clearChatChars(void)
 //
 boolean HU_Responder(event_t *ev)
 {
-	static boolean shiftdown = false, altdown = false;
+	shiftdown = false, altdown = false;
 	boolean eatkey = false;
 	unsigned char c;
 
@@ -808,7 +808,7 @@ void HU_Drawer(void)
 	// draw multiplayer rankings
 	if (hu_showscores)
 	{
-		if (gametype == GT_MATCH || gametype == GT_RACE || gametype == GT_TAG || gametype == GT_CTF 
+		if (gametype == GT_MATCH || gametype == GT_RACE || gametype == GT_TAG || gametype == GT_CTF
 #ifdef CHAOSISNOTDEADYET
 			|| gametype == GT_CHAOS
 #endif
@@ -850,7 +850,7 @@ void HU_Drawer(void)
 		}
 
 		y -= (pnumlines-1)*6;
-		
+
 		strcpy(temp, cechotext);
 
 		echoptr = &temp[0];

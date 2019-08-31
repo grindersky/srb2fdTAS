@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -132,9 +132,9 @@ static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}
 // whether to use console background picture, or translucent mode
 static consvar_t cons_backpic = {"con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, {1, "Orange"}, 
-												{2, "Blue"}, {3, "Green"}, {4, "Gray"}, 
-												{5, "Red"}, {0, NULL}}; 
+static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, {1, "Orange"},
+												{2, "Blue"}, {3, "Green"}, {4, "Gray"},
+												{5, "Red"}, {0, NULL}};
 static consvar_t cons_backcolor = {"con_backcolor", "3", CV_SAVE, backcolor_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static void CON_Print(char *msg);
@@ -546,7 +546,7 @@ void CON_Ticker(void)
 //
 boolean CON_Responder(event_t *ev)
 {
-	static boolean shiftdown;
+	shiftdown = 0;
 
 	// sequential completions a la 4dos
 	static char completion[80];

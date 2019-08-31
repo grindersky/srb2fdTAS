@@ -5,7 +5,7 @@
     Feel free to customize this file to suit your needs
 */
 
-#import <SDL/SDL.h>
+#import "SDL.h"
 #import "SDL_macosx_main.h"
 #import <sys/param.h> /* for MAXPATHLEN */
 #import <unistd.h>
@@ -43,10 +43,19 @@ static BOOL   gFinderLaunch;
 static void addArgument(const char *value)
 {
 	if(!gArgc)
-            gArgv = (char **)malloc(sizeof(*gArgv));
-        else
-            gArgv = (char **)realloc(gArgv, sizeof(*gArgv) * (gArgc + 1));
-        gArgc++;
+		gArgv = (char **)malloc(sizeof(*gArgv));
+	else
+	{
+		char **newgArgv = (char **)realloc(gArgv, sizeof(*gArgv) * (gArgc + 1));
+		if (!newgArgv)
+		{
+			newgArgv = malloc(sizeof(*gArgv) * (gArgc + 1));
+			memcpy(newgArgv, gArgv, sizeof(*gArgv) * gArgc);
+			free(gArgv);
+		}
+		gArgv = newgArgv;
+	}
+	gArgc++;
 	gArgv[gArgc - 1] = (char *)malloc(sizeof(char) * (strlen(value) + 1));
 	strcpy(gArgv[gArgc - 1], value);
 }
@@ -60,7 +69,7 @@ static NSString *getApplicationName(void)
     dict = ( NSDictionary *)CFBundleGetInfoDictionary(CFBundleGetMainBundle());
     if (dict)
         appName = [dict objectForKey: @"CFBundleName"];
-    
+
     if (![appName length])
         appName = [[NSProcessInfo processInfo] processName];
 
@@ -81,7 +90,9 @@ static NSString *getApplicationName(void)
 /* Invoked from the Quit menu item */
 - (void)terminate:(id)sender
 {
+#if (__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
     (void)sender;
+#endif
     /* Post a SDL_QUIT event */
     SDL_Event event;
     event.type = SDL_QUIT;
@@ -100,7 +111,7 @@ static NSString *getApplicationName(void)
         char parentdir[MAXPATHLEN];
 	CFURLRef url = CFBundleCopyBundleURL(CFBundleGetMainBundle());
 	CFURLRef url2 = CFURLCreateCopyDeletingLastPathComponent(0, url);
-	if (CFURLGetFileSystemRepresentation(url2, true, parentdir, MAXPATHLEN))
+	if (CFURLGetFileSystemRepresentation(url2, true, (UInt8 *)parentdir, MAXPATHLEN))
         {
 	       assert ( chdir (parentdir) == 0 );   /* chdir to the binary app's parent */
 	}
@@ -144,10 +155,10 @@ static void setApplicationMenu(void)
     NSMenuItem *menuItem;
     NSString *title;
     NSString *appName;
-    
+
     appName = getApplicationName();
     appleMenu = [[NSMenu alloc] initWithTitle:@""];
-    
+
     /* Add menu items */
     title = [@"About " stringByAppendingString:appName];
     [appleMenu addItemWithTitle:title action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
@@ -167,7 +178,7 @@ static void setApplicationMenu(void)
     title = [@"Quit " stringByAppendingString:appName];
     [appleMenu addItemWithTitle:title action:@selector(terminate:) keyEquivalent:@"q"];
 
-    
+
     /* Put menu into the menubar */
     menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
     [menuItem setSubmenu:appleMenu];
@@ -189,17 +200,17 @@ static void setupWindowMenu(void)
     NSMenuItem  *menuItem;
 
     windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
-    
+
     /* "Minimize" item */
     menuItem = [[NSMenuItem alloc] initWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
     [windowMenu addItem:menuItem];
     [menuItem release];
-    
+
     /* Put menu into the menubar */
     windowMenuItem = [[NSMenuItem alloc] initWithTitle:@"Window" action:nil keyEquivalent:@""];
     [windowMenuItem setSubmenu:windowMenu];
     [[NSApp mainMenu] addItem:windowMenuItem];
-    
+
     /* Tell the application object that this is now the window menu */
     [NSApp setWindowsMenu:windowMenu];
 
@@ -211,14 +222,16 @@ static void setupWindowMenu(void)
 /* Replacement for NSApplicationMain */
 static void CustomApplicationMain (int argc, char **argv)
 {
+#if (__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
     (void)argc;
     (void)argv;
+#endif
     NSAutoreleasePool	*pool = [[NSAutoreleasePool alloc] init];
     SDLMain				*sdlMain;
 
     /* Ensure the application object is initialised */
     [SDLApplication sharedApplication];
-    
+
 #if SDL_USE_CPS
     {
         CPSProcessSerNum PSN;
@@ -238,10 +251,10 @@ static void CustomApplicationMain (int argc, char **argv)
     /* Create SDLMain and make it the app delegate */
     sdlMain = [[SDLMain alloc] init];
     [NSApp setDelegate:sdlMain];
-    
+
     /* Start the main event loop */
     [NSApp run];
-    
+
     [sdlMain release];
     [pool release];
 }
@@ -250,16 +263,20 @@ static void CustomApplicationMain (int argc, char **argv)
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
 {
+#if (__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
     (void)theApplication;
+#endif
     addArgument("-iwad");
-    addArgument([filename cString]);
+    addArgument([filename UTF8String]);
     return YES;
 }
 
 /* Called when the internal event loop has just started running */
 - (void) applicationDidFinishLaunching: (NSNotification *) note
 {
+#if (__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
     (void)note;
+#endif
     int status;
 
     /* Set the working directory to the .app's parent directory */
@@ -270,7 +287,8 @@ static void CustomApplicationMain (int argc, char **argv)
     [self fixMenu:[NSApp mainMenu] withAppName:getApplicationName()];
 #endif
 
-    setenv("SRB2WADDIR", [[[NSBundle mainBundle] resourcePath] cString], 1);
+    if (!getenv("SRB2WADDIR"))
+        setenv("SRB2WADDIR", [[[NSBundle mainBundle] resourcePath] UTF8String], 1);
 
     /* Hand off to main application code */
     status = SDL_main (gArgc, gArgv);
@@ -285,36 +303,36 @@ static void CustomApplicationMain (int argc, char **argv)
 
 - (NSString *)stringByReplacingRange:(NSRange)aRange with:(NSString *)aString
 {
-    unsigned int bufferSize;
-    unsigned int selfLen = [self length];
-    unsigned int aStringLen = [aString length];
+    size_t bufferSize;
+    size_t selfLen = [self length];
+    size_t aStringLen = [aString length];
     unichar *buffer;
     NSRange localRange;
     NSString *result;
 
     bufferSize = selfLen + aStringLen - aRange.length;
     buffer = NSAllocateMemoryPages(bufferSize*sizeof(unichar));
-    
+
     /* Get first part into buffer */
     localRange.location = 0;
     localRange.length = aRange.location;
     [self getCharacters:buffer range:localRange];
-    
+
     /* Get middle part into buffer */
     localRange.location = 0;
     localRange.length = aStringLen;
     [aString getCharacters:(buffer+aRange.location) range:localRange];
-     
+
     /* Get last part into buffer */
     localRange.location = aRange.location + aRange.length;
     localRange.length = selfLen - localRange.location;
     [self getCharacters:(buffer+aRange.location+aStringLen) range:localRange];
-    
+
     /* Build output string */
     result = [NSString stringWithCharacters:buffer length:bufferSize];
-    
+
     NSDeallocateMemoryPages(buffer, bufferSize);
-    
+
     return result;
 }
 
@@ -332,7 +350,7 @@ int main (int argc, char **argv)
 {
 
     /* Copy the arguments into a global variable */
-    
+
     /* This is passed if we are launched by double-clicking */
     if ( argc >= 2 && strncmp (argv[1], "-psn", 4) == 0 ) {
         gArgc = 1;

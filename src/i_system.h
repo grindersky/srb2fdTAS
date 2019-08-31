@@ -330,4 +330,6 @@ char *I_GetEnv(const char *name);
 
 int I_PutEnv(char *variable);
 
+void Command_SDLVer_f(void);
+
 #endif

@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief SRB2 main program
-/// 
+///
 ///	SRB2 main program (D_SRB2Main) and game loop (D_SRB2Loop),
 ///	plus functions to parse command line parameters, configure game
 ///	parameters, and call the startup functions.
@@ -132,6 +132,10 @@ char srb2path[256] = ".";
 #endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+
+UINT8 shiftdown = 0; // 0x1 left, 0x2 right
+UINT8 ctrldown = 0; // 0x1 left, 0x2 right
+UINT8 altdown = 0; // 0x1 left, 0x2 right
 
 //
 // EVENT HANDLING
@@ -271,7 +275,7 @@ static void D_Display(void)
 	}
 	else if (wipe && rendermode != render_none) // Delay the hardware modes as well
 	{
-		
+
 		wipestart = I_GetTime() - 1;
 		y = wipestart + 32; // init a timeout
 		do
@@ -515,7 +519,7 @@ static void D_Display(void)
 #ifdef HWRENDER
 	else if (rendermode != render_none) // Delay the hardware modes as well
 	{
-		
+
 		wipestart = I_GetTime() - 1;
 		y = wipestart + 32; // init a timeout
 		do
@@ -1217,13 +1221,13 @@ void D_SRB2Main(void)
 
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
-	
+
 	CONS_Printf("I_StartupTimer...\n");
 	I_StartupTimer();
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
-	
+
 	// load wad, including the main wad file
 	if (!W_InitMultipleFiles(startupwadfiles))
 		CONS_Error("A WAD file was not found or not valid\n");

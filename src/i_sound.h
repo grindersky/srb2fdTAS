@@ -24,6 +24,21 @@
 #include "sounds.h"
 #include "command.h"
 
+// copied from SDL mixer, plus GME
+typedef enum {
+	MU_NONE,
+	MU_CMD,
+	MU_WAV,
+	MU_MOD,
+	MU_MID,
+	MU_OGG,
+	MU_MP3,
+	MU_MP3_MAD_UNUSED, // use MU_MP3 instead
+	MU_FLAC,
+	MU_MODPLUG_UNUSED, // use MU_MOD instead
+	MU_GME
+} musictype_t;
+
 /**	\brief Sound subsystem runing and waiting
 */
 extern byte sound_started;
@@ -39,7 +54,7 @@ extern consvar_t cv_samplerate;
 
 	\return	data for sfx
 
-	
+
 */
 void *I_GetSfx(sfxinfo_t *sfx);
 
@@ -49,7 +64,7 @@ void *I_GetSfx(sfxinfo_t *sfx);
 
 	\return	void
 
-	
+
 */
 void I_FreeSfx(sfxinfo_t *sfx);
 
@@ -74,7 +89,7 @@ void I_ShutdownSound(void);
 
 	\return	sfx handle
 
-	
+
 */
 int I_StartSound(int id, int vol, int sep, int pitch, int priority);
 
@@ -84,7 +99,7 @@ int I_StartSound(int id, int vol, int sep, int pitch, int priority);
 
 	\return	void
 
-	
+
 */
 void I_StopSound(int handle);
 
@@ -94,7 +109,7 @@ void I_StopSound(int handle);
 
 	\return	0 if no longer playing, 1 if playing.
 
-	
+
 */
 int I_SoundIsPlaying(int handle);
 
@@ -107,7 +122,7 @@ int I_SoundIsPlaying(int handle);
 
 	\return	void
 
-	
+
 */
 void I_UpdateSoundParams(int handle, int vol, int sep, int pitch);
 
@@ -117,7 +132,7 @@ void I_UpdateSoundParams(int handle, int vol, int sep, int pitch);
 
 	\return	void
 
-	
+
 */
 void I_SetSfxVolume(int volume);
 
@@ -142,9 +157,9 @@ void I_ShutdownMusic(void);
 
 	\return	void
 
-	
+
 */
-void I_PauseSong(int handle);
+void I_PauseSong(void);
 
 /**	\brief	RESUME game handling
 
@@ -152,9 +167,17 @@ void I_PauseSong(int handle);
 
 	\return	void
 
-	
+
 */
-void I_ResumeSong(int handle);
+void I_ResumeSong(void);
+void I_StopFadingSong(void);
+musictype_t I_SongType(void);
+boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
+boolean I_SetSongLoopPoint(UINT32 looppoint);
+UINT32 I_GetSongLoopPoint(void);
+void I_SetMusicVolume(UINT8 volume);
+void I_UnloadSong(void);
+UINT32 I_GetSongLength(void);
 
 //
 //  MIDI I/O
@@ -178,7 +201,7 @@ void I_ShutdownMIDIMusic(void);
 
 	\return	void
 
-	
+
 */
 void I_SetMIDIMusicVolume(int volume);
 
@@ -202,7 +225,7 @@ int I_RegisterSong(void *data, int len);
 
 	\todo pass music name, not handle
 */
-boolean I_PlaySong(int handle, int looping);
+boolean I_PlaySong(boolean looping);
 
 /**	\brief	Stops a song over 3 seconds
 
@@ -211,15 +234,15 @@ boolean I_PlaySong(int handle, int looping);
 
 	/todo drop handle
 */
-void I_StopSong(int handle);
+void I_StopSong(void);
 
 /**	\brief	See ::I_RegisterSong, then think backwards
 
-	\param	handle	song handle
+	\param	handle	song handle (unused)
 
 	\sa I_RegisterSong
 	\todo remove midi handle
-*/ 
+*/
 void I_UnRegisterSong(int handle);
 
 //
@@ -246,7 +269,7 @@ void I_ShutdownDigMusic(void);
 
 	\return	if true, song playing
 
-	
+
 */
 boolean I_StartDigSong(const char *musicname, int looping);
 
@@ -260,7 +283,7 @@ void I_StopDigSong(void);
 
 	\return	void
 
-	
+
 */
 void I_SetDigMusicVolume(int volume);
 
@@ -304,7 +327,7 @@ void I_UpdateCD(void);
 
 	\return	void
 
-	
+
 */
 void I_PlayCD(int track, boolean looping);
 
@@ -313,8 +336,9 @@ void I_PlayCD(int track, boolean looping);
 	\param	volume	volume level to set at
 
 	\return	return 0 on failure
-	
+
 */
 int I_SetVolumeCD(int volume);
+
 
 #endif

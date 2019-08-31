@@ -28,24 +28,25 @@
 
 	\return	void
 
-	
+
 */
 
 void ShowEndTxt(void)
 {
-#if !(defined (_WIN32_WCE) || defined (_XBOX) || defined (_arch_dreamcast))
-	int i;
-	unsigned short j, att = 0;
-	int nlflag = 1;
-#if defined (_WIN32) || defined (_WIN64)
+	INT32 i;
+	UINT16 j, att = 0;
+	INT32 nlflag = 1;
+#ifdef _WIN32
 	HANDLE co = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD mode, bytesWritten;
 	CONSOLE_SCREEN_BUFFER_INFO backupcon;
 	COORD resizewin = {80,-1};
+	CHAR let = 0;
 #endif
-	unsigned short *text;
+	UINT16 *ptext;
 	void *data;
-	int endoomnum = W_GetNumForName("ENDOOM");
-//	char *col;
+	lumpnum_t endoomnum = W_GetNumForName("ENDOOM");
+	//char *col;
 
 	/* if the xterm has more then 80 columns we need to add nl's */
 	/* doesn't work, COLUMNS is not in the environment at this time ???
@@ -57,10 +58,10 @@ void ShowEndTxt(void)
 	*/
 
 	/* get the lump with the text */
-	data = text = W_CacheLumpNum(endoomnum, PU_CACHE);
+	data = ptext = W_CacheLumpNum(endoomnum, PU_CACHE);
 
-#if defined (_WIN32) || defined (_WIN64)
-	if (co == (HANDLE)(-1) || GetFileType(co) != FILE_TYPE_CHAR) // test if it a good handle
+#ifdef _WIN32
+	if (co == INVALID_HANDLE_VALUE || GetFileType(co) != FILE_TYPE_CHAR || !GetConsoleMode(co, &mode)) // test if it a good handle
 	{
 		Z_Free(data);
 		return;
@@ -74,21 +75,23 @@ void ShowEndTxt(void)
 
 	for (i=1; i<=80*25; i++) // print 80x25 text and deal with the attributes too
 	{
-		j = (unsigned short)(*text >> 8); // attribute first
+		j = (UINT16)(*ptext >> 8); // attribute first
+		let = (char)(*ptext & 0xff); // text second
 		if (j != att) // attribute changed?
 		{
 			att = j; // save current attribute
 			SetConsoleTextAttribute(co, j); //set fg and bg color for buffer
 		}
 
-		printf("%c",*text++ & 0xff); // now the text
+		WriteConsoleA(co, &let,  1, &bytesWritten, NULL); // now the text
 
 		if (nlflag && !(i % 80) && backupcon.dwSize.X > resizewin.X) // do we need a nl?
 		{
 			att = backupcon.wAttributes;
 			SetConsoleTextAttribute(co, att); // all attributes off
-			printf("\n");
+			WriteConsoleA(co, "\n",  1, &bytesWritten, NULL); // newline to console
 		}
+		ptext++;
 	}
 	SetConsoleTextAttribute(co, backupcon.wAttributes); // all attributes off
 #else
@@ -96,7 +99,7 @@ void ShowEndTxt(void)
 	for (i=1; i<=80*25; i++) {
 		/* attribute first */
 		/* attribute changed? */
-		if ((j = *text >> 8) != att) {
+		if ((j = *ptext >> 8) != att) {
 			/* save current attribute */
 			att = j;
 			/* set new attribute, forground color first */
@@ -208,7 +211,7 @@ void ShowEndTxt(void)
 		}
 
 		/* now the text */
-		printf("%c",*text++ & 0xff);
+		printf("%c",*ptext++ & 0xff);
 
 		/* do we need a nl? */
 		if (nlflag)
@@ -228,5 +231,4 @@ void ShowEndTxt(void)
 		printf("\n");
 
 	Z_Free(data);
-#endif
 }

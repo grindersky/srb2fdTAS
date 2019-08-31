@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -20,9 +20,19 @@
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 
+#ifdef BUGTRAP
+
+BOOL InitBugTrap(void);
+void ShutdownBugTrap(void);
+BOOL IsBugTrapLoaded(void);
+
+#endif
+
 // called in the exception filter of the __try block, writes all useful debugging information
 // to a file, using only win32 functions in case the C runtime is in a bad state.
-int __cdecl RecordExceptionInfo (PEXCEPTION_POINTERS data/*, LPCSTR Message, LPSTR lpCmdLine*/);
+LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPSTR lpCmdLine*/);
+
+extern LPTOP_LEVEL_EXCEPTION_FILTER prevExceptionFilter;
 
 #ifdef __MINGW32__
 
@@ -30,15 +40,20 @@ int __cdecl RecordExceptionInfo (PEXCEPTION_POINTERS data/*, LPCSTR Message, LPS
 
 #ifndef TRYLEVEL_NONE
 
+#ifndef __MINGW64__
 #define NO_SEH_MINGW //Alam:?
-struct _EXCEPTION_POINTERS *GetExceptionInformation(VOID);
+#endif
+#ifndef GetExceptionInformation
+void *__cdecl _exception_info(void);
+#define GetExceptionInformation (struct _EXCEPTION_POINTERS *)_exception_info
+#endif //GetExceptionInformation
 
 //Alam_GBC: use __try1(seh)
 #ifndef __try
 #define __try
 #endif //__try
 
-#undef NO_SEH_MINGW //Alam: win_dbg's code not working with MINGW
+//#undef NO_SEH_MINGW //Alam: win_dbg's code not working with MINGW
 //Alam_GBC: use __except1
 #ifndef __except
 #define __except(x) if (0)

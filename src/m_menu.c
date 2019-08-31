@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief SRB2 selection menu, options, skill, sliders and icons. Kinda widget stuff.
-/// 
+///
 ///	\warning: \n
 ///	All V_DrawPatchDirect() has been replaced by V_DrawScaledPatch()
 ///	so that the menu is scaled to the screen size. The scaling is always
@@ -1938,7 +1938,7 @@ static void M_DrawServerMenu(void)
 		PictureOfLevel = W_CachePatchName(va("%sP", G_BuildMapName(cv_nextmap.value)), PU_CACHE);
 	else
 		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
-	
+
 	V_DrawSmallScaledPatch((BASEVIDWIDTH*3/4)-(PictureOfLevel->width/4), (BASEVIDHEIGHT*3/4)-(PictureOfLevel->height/4), 0, PictureOfLevel);
 }
 
@@ -3670,7 +3670,7 @@ void M_DrawTimeAttackMenu(void)
 		PictureOfLevel = W_CachePatchName(va("%sP", G_BuildMapName(cv_nextmap.value)), PU_CACHE);
 	else
 		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
-	
+
 	V_DrawSmallScaledPatch(208, 128, 0, PictureOfLevel);
 
 	for (i = 0; i < NUMMAPS; i++)
@@ -4459,7 +4459,7 @@ static void M_DrawLevelSelectMenu(void)
 			PictureOfLevel = W_CachePatchName(va("%sP", G_BuildMapName(cv_nextmap.value)), PU_CACHE);
 		else
 			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
-		
+
 		V_DrawSmallScaledPatch(200, 110, 0, PictureOfLevel);
 	}
 }
@@ -5115,7 +5115,7 @@ static void M_ChaosOptions(int choice)
 static menuitem_t ServerOptionsMenu[] =
 {
 	{IT_STRING | IT_CVAR, NULL, "Internet server", &cv_internetserver,     0},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, 
+	{IT_STRING | IT_CVAR | IT_CV_STRING,
 	                      NULL, "Master server",   &cv_masterserver,       0},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
 	                      NULL, "Server name",     &cv_servername,         0},
@@ -6200,7 +6200,7 @@ static void M_DrawGameStats(void)
 		V_DrawString(ecks + 16, 160, 0, va("%s", savegameinfo[saveSlotSelected].levelname));
 	else
 		V_DrawString(ecks + 16, 160, 0, va("%s %d", savegameinfo[saveSlotSelected].levelname, savegameinfo[saveSlotSelected].actnum));
-	
+
 	V_DrawScaledPatch(ecks + 16, 168, 0, W_CachePatchName("CHAOS1", PU_CACHE));
 	V_DrawString(ecks + 36, 172, 0, va("x %d", savegameinfo[saveSlotSelected].numemeralds));
 
@@ -7074,7 +7074,7 @@ boolean M_Responder(event_t *ev)
 	int ch = -1;
 //	int i;
 	static tic_t joywait = 0, mousewait = 0;
-	static boolean shiftdown = false;
+	boolean shiftdown = false;
 	static int pmousex = 0, pmousey = 0;
 	static int lastx = 0, lasty = 0;
 	void (*routine)(int choice); // for some casting problem

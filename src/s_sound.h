@@ -21,6 +21,7 @@
 #define __S_SOUND__
 
 #include "sounds.h"
+#include "command.h"
 
 // mask used to indicate sound origin is player item pickup
 #define PICKUP_SOUND 0x8000

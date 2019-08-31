@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -54,7 +54,7 @@
 #undef DEBUG_TO_FILE
 #endif
 
-#ifndef DRIVER_STRING 
+#ifndef DRIVER_STRING
 //    #define USE_PALETTED_TEXTURE
 #define DRIVER_STRING "HWRAPI Init(): SRB2 OpenGL renderer" // Tails
 #endif
@@ -94,9 +94,7 @@ extern const GLubyte    *gl_extensions;
 extern RGBA_t           myPaletteData[];
 #ifndef SDL
 #ifdef _WINDOWS
-extern HANDLE           logstream;
-#elif !defined (SDLIO)
-extern int              logstream;
+extern FILE *logstream;
 #endif
 #endif
 extern GLint            screen_width;

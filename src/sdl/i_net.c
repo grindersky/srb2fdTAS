@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -32,6 +32,8 @@
 
 #include "../i_tcp.h"
 
+#ifdef HAVE_SDL
+
 #ifdef HAVE_SDLNET
 
 #include "SDL_net.h"
@@ -51,19 +53,29 @@ static boolean init_SDLNet_driver = false;
 
 static const char *NET_AddrToStr(IPaddress* sk)
 {
-	static char s[50];
-	sprintf(s,"%d.%d.%d.%d:%d",
-			((Uint8*)(&(sk->host)))[0],
-			((Uint8*)(&(sk->host)))[1],
-			((Uint8*)(&(sk->host)))[2],
-			((Uint8*)(&(sk->host)))[3],
-			sk->port);
+	static char s[22]; // 255.255.255.255:65535
+	strcpy(s, SDLNet_ResolveIP(sk));
+	if (sk->port != 0) strcat(s, va(":%d", sk->port));
 	return s;
+}
+
+static const char *NET_GetNodeAddress(INT32 node)
+{
+	if (!nodeconnected[node])
+		return NULL;
+	return NET_AddrToStr(&clientaddress[node]);
+}
+
+static const char *NET_GetBanAddress(size_t ban)
+{
+	if (ban > numbans)
+		return NULL;
+	return NET_AddrToStr(&banned[ban]);
 }
 
 static boolean NET_cmpaddr(IPaddress* a, IPaddress* b)
 {
-	return (a->host == b->host && a->port == b->port);
+	return (a->host == b->host && (b->port == 0 || a->port == b->port));
 }
 
 static boolean NET_CanGet(void)
@@ -73,8 +85,8 @@ static boolean NET_CanGet(void)
 
 static void NET_Get(void)
 {
-	int mystatus;
-	int newnode;
+	INT32 mystatus;
+	INT32 newnode;
 	mypacket.len = MAXPACKETLENGTH;
 	if (!NET_CanGet())
 	{
@@ -95,30 +107,32 @@ static void NET_Get(void)
 		{
 			size_t i;
 			newnode++;
-			memcpy(&clientaddress[newnode], &mypacket.address, sizeof (IPaddress));
+			M_Memcpy(&clientaddress[newnode], &mypacket.address, sizeof (IPaddress));
 			DEBFILE(va("New node detected: node:%d address:%s\n", newnode,
-					NET_AddrToStr(&clientaddress[newnode])));
+					NET_GetNodeAddress(newnode)));
 			doomcom->remotenode = newnode; // good packet from a game player
 			doomcom->datalength = mypacket.len;
 			for (i = 0; i < numbans; i++)
+			{
 				if (NET_cmpaddr(&mypacket.address, &banned[i]))
 				{
 					DEBFILE("This dude has been banned\n");
 					NET_bannednode[newnode] = true;
 					break;
 				}
+			}
 			if (i == numbans)
 				NET_bannednode[newnode] = false;
 			return;
 		}
 		else
-			CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+			I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 	}
 	else if (mystatus == -1)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 	}
-	
+
 	DEBFILE("New node detected: No more free slots\n");
 	doomcom->remotenode = -1; // no packet
 }
@@ -137,17 +151,17 @@ static void NET_Send(void)
 	mypacket.len = doomcom->datalength;
 	if (SDLNet_UDP_Send(mysocket,doomcom->remotenode-1,&mypacket) == 0)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 	}
 }
 
-static void NET_FreeNodenum(int numnode)
+static void NET_FreeNodenum(INT32 numnode)
 {
 	// can't disconnect from self :)
 	if (!numnode)
 		return;
 
-	DEBFILE(va("Free node %d (%s)\n", numnode, NET_AddrToStr(&clientaddress[numnode])));
+	DEBFILE(va("Free node %d (%s)\n", numnode, NET_GetNodeAddress(numnode)));
 
 	SDLNet_UDP_Unbind(mysocket,numnode-1);
 
@@ -158,6 +172,7 @@ static UDPsocket NET_Socket(void)
 {
 	UDPsocket temp = NULL;
 	Uint16 portnum = 0;
+	IPaddress tempip = {INADDR_BROADCAST,0};
 	//Hurdler: I'd like to put a server and a client on the same computer
 	//Logan: Me too
 	//BP: in fact for client we can use any free port we want i have read
@@ -172,26 +187,19 @@ static UDPsocket NET_Socket(void)
 	else
 		portnum = sock_port;
 	temp = SDLNet_UDP_Open(portnum);
-	if (temp)
+	if (!temp)
 	{
-		IPaddress tempip = {INADDR_BROADCAST,0};
-		if (SDLNet_UDP_Bind(temp,BROADCASTADDR-1,&tempip) == -1)
-		{
-			CONS_Printf("SDL_Net: %s",SDLNet_GetError());
-			SDLNet_UDP_Close(temp);
-			return NULL;
-		}
-		else
-		{
-			clientaddress[BROADCASTADDR].port = sock_port;
-			clientaddress[BROADCASTADDR].host = INADDR_BROADCAST;
-		}
-	}
-	else
-	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+			I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return NULL;
 	}
+	if (SDLNet_UDP_Bind(temp,BROADCASTADDR-1,&tempip) == -1)
+	{
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
+		SDLNet_UDP_Close(temp);
+		return NULL;
+	}
+	clientaddress[BROADCASTADDR].port = sock_port;
+	clientaddress[BROADCASTADDR].host = INADDR_BROADCAST;
 
 	doomcom->extratics = 1; // internet is very high ping
 
@@ -201,7 +209,7 @@ static UDPsocket NET_Socket(void)
 static void I_ShutdownSDLNetDriver(void)
 {
 	if (myset) SDLNet_FreeSocketSet(myset);
-	myset = NULL;	
+	myset = NULL;
 	SDLNet_Quit();
 	init_SDLNet_driver = false;
 }
@@ -212,7 +220,7 @@ static void I_InitSDLNetDriver(void)
 		I_ShutdownSDLNetDriver();
 	if (SDLNet_Init() == -1)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return; // No good!
 	}
 	D_SetDoomcom();
@@ -227,37 +235,30 @@ static void NET_CloseSocket(void)
 	mysocket = NULL;
 }
 
-static signed char NET_NetMakeNode(const char *hostname)
+static SINT8 NET_NetMakeNodewPort(const char *hostname, const char *port)
 {
-	int newnode;
-	char *portchar;
-	unsigned short portnum = sock_port;
+	INT32 newnode;
+	UINT16 portnum = sock_port;
 	IPaddress hostnameIP;
 
 	// retrieve portnum from address!
-	{
-		char *localhostname = strdup(hostname);
-		strtok(localhostname, ":");
-		portchar = strtok(NULL, ":");
-		if (portchar)
-			portnum = atoi(portchar);
-		free(localhostname);
-	}
-	
+	if (port && !port[0])
+		portnum = atoi(port);
+
 	if (SDLNet_ResolveHost(&hostnameIP,hostname,portnum) == -1)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return -1;
 	}
 	newnode = SDLNet_UDP_Bind(mysocket,-1,&hostnameIP);
 	if (newnode == -1)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return newnode;
 	}
 	newnode++;
-	memcpy(&clientaddress[newnode],&hostnameIP,sizeof (IPaddress));
-	return (signed char)newnode;
+	M_Memcpy(&clientaddress[newnode],&hostnameIP,sizeof (IPaddress));
+	return (SINT8)newnode;
 }
 
 
@@ -265,13 +266,13 @@ static boolean NET_OpenSocket(void)
 {
 	memset(clientaddress, 0, sizeof (clientaddress));
 
-	//CONS_Printf("SDL_Net Code starting up\n");
+	//I_OutputMsg("SDL_Net Code starting up\n");
 
 	I_NetSend = NET_Send;
 	I_NetGet = NET_Get;
 	I_NetCloseSocket = NET_CloseSocket;
 	I_NetFreeNodenum = NET_FreeNodenum;
-	I_NetMakeNode = NET_NetMakeNode;
+	I_NetMakeNodewPort = NET_NetMakeNodewPort;
 
 	//I_NetCanSend = NET_CanSend;
 
@@ -286,23 +287,36 @@ static boolean NET_OpenSocket(void)
 	myset = SDLNet_AllocSocketSet(1);
 	if (!myset)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return false;
 	}
 	if (SDLNet_UDP_AddSocket(myset,mysocket) == -1)
 	{
-		CONS_Printf("SDL_Net: %s",SDLNet_GetError());
+		I_OutputMsg("SDL_Net: %s",SDLNet_GetError());
 		return false;
 	}
 	return true;
 }
 
-static boolean NET_Ban(int node)
+static boolean NET_Ban(INT32 node)
 {
 	if (numbans == MAXBANS)
 		return false;
 
-	memcpy(&banned[numbans], &clientaddress[node], sizeof (IPaddress));
+	M_Memcpy(&banned[numbans], &clientaddress[node], sizeof (IPaddress));
+	banned[numbans].port = 0;
+	numbans++;
+	return true;
+}
+
+static boolean NET_SetBanAddress(const char *address, const char *mask)
+{
+	(void)mask;
+	if (bans == MAXBANS)
+		return false;
+
+	if (SDLNet_ResolveHost(&banned[numbans], address, 0) == -1)
+		return false;
 	numbans++;
 	return true;
 }
@@ -322,6 +336,13 @@ boolean I_InitNetwork(void)
 #ifdef HAVE_SDLNET
 	char serverhostname[255];
 	boolean ret = false;
+	SDL_version SDLcompiled;
+	const SDL_version *SDLlinked = SDLNet_Linked_Version();
+	SDL_NET_VERSION(&SDLcompiled)
+	I_OutputMsg("Compiled for SDL_Net version: %d.%d.%d\n",
+                        SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
+	I_OutputMsg("Linked with SDL_Net version: %d.%d.%d\n",
+                        SDLlinked->major, SDLlinked->minor, SDLlinked->patch);
 	//if (!M_CheckParm ("-sdlnet"))
 	//	return false;
 	// initilize the driver
@@ -333,7 +354,7 @@ boolean I_InitNetwork(void)
 	if (M_CheckParm("-udpport"))
 	{
 		if (M_IsNextParm())
-			sock_port = (unsigned short)atoi(M_GetNextParm());
+			sock_port = (UINT16)atoi(M_GetNextParm());
 		else
 			sock_port = 0;
 	}
@@ -351,7 +372,7 @@ boolean I_InitNetwork(void)
 		// particular number here.
 		// FIXME: for dedicated server, numnodes needs to be set to 0 upon start
 /*		if (M_IsNextParm())
-			doomcom->numnodes = (short)atoi(M_GetNextParm());
+			doomcom->numnodes = (INT16)atoi(M_GetNextParm());
 		else */if (dedicated)
 			doomcom->numnodes = 0;
 		else
@@ -403,6 +424,9 @@ boolean I_InitNetwork(void)
 	I_NetOpenSocket = NET_OpenSocket;
 	I_Ban = NET_Ban;
 	I_ClearBans = NET_ClearBans;
+	I_GetNodeAddress = NET_GetNodeAddress;
+	I_GetBenAddress = NET_GetBenAddress;
+	I_SetBanAddress = NET_SetBanAddress;
 	bannednode = NET_bannednode;
 
 	return ret;
@@ -415,3 +439,4 @@ boolean I_InitNetwork(void)
 	return false;
 #endif
 }
+#endif
