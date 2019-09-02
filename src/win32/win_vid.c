@@ -207,68 +207,8 @@ void I_FinishUpdate(void)
 	if (rendermode == render_none)
 		return;
 
-	// display a graph of ticrate 
 	if (cv_ticrate.value)
-	{
-		int k, j, l;
-		static tic_t lasttic;
-		tic_t tics,t;
-
-		t = I_GetTime();
-		tics = t - lasttic;
-		lasttic = t;
-		if (tics > 20) tics = 20;
-
-		for (i = 0; i < FPSPOINTS - 1; i++)
-			fpsgraph[i] = fpsgraph[i+1];
-		fpsgraph[FPSPOINTS-1] = 20-tics;
-
-#ifdef HWRENDER
-		if (rendermode == render_soft)
-#endif
-		{
-			// draw dots
-			for (j = 0; j <= 20*SCALE*vid.dupy;j += 2*SCALE*vid.dupy)
-			{
-				l = (vid.height - 1 - j)*vid.width*vid.bpp;
-				for (i = 0; i < FPSPOINTS*SCALE*vid.dupx; i += 2*SCALE*vid.dupx)
-					screens[0][l+i]=0xff;
-			}
-
-			// draw the graph
-			for (i = 0;i < FPSPOINTS; i++)
-				for (k = 0; k < SCALE*vid.dupx; k++)
-					PUTDOT(i*SCALE*vid.dupx + k, vid.height - 1 - (fpsgraph[i]*SCALE*vid.dupy),
-						0xff);
-		}
-#ifdef HWRENDER
-		else
-		{
-			fline_t p;
-			for (j = 0; j <= 20*SCALE*vid.dupy; j += 2*SCALE*vid.dupy)
-			{
-				l = (vid.height - 1 - j);
-				for (i = 0; i < FPSPOINTS*SCALE*vid.dupx;i += 2*SCALE*vid.dupx)
-				{
-					p.a.x = i;
-					p.a.y = l;
-					p.b.x = i+1;
-					p.b.y = l;
-					HWR_drawAMline(&p, 0xff);
-				}
-			}
-
-			for (i = 1; i < FPSPOINTS;i++)
-			{
-				p.a.x = SCALE * (i-1);
-				p.a.y = vid.height-1-fpsgraph[i-1]*SCALE*vid.dupy;
-				p.b.x = SCALE * i;
-				p.b.y = vid.height-1-fpsgraph[i]*SCALE*vid.dupy;
-				HWR_drawAMline(&p, 0xff);
-			}
-		}
-#endif
-	}
+		SCR_DisplayTicRate();
 
 	//
 	if (bDIBMode)

@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Gamma correction LUT stuff
-/// 
+///
 ///	Functions to draw patches (by post) directly to screen.
 ///	Functions to blit a block to the screen.
 
@@ -41,7 +41,7 @@ byte *screens[5];
 static CV_PossibleValue_t gamma_cons_t[] = {{0, "MIN"}, {4, "MAX"}, {0, NULL}};
 static void CV_usegamma_OnChange(void);
 
-consvar_t cv_ticrate = {"vid_ticrate", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ticrate = {"showfps", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_usegamma = {"gamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_usegamma_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 #ifdef HWRENDER
@@ -1666,7 +1666,7 @@ int V_LevelNameHeight(const char *string)
 		c = toupper(string[i]) - LT_FONTSTART;
 		if (c < 0 || (c >= HU_REALFONTSIZE && c != '~' - HU_FONTSTART && c != '`' - HU_FONTSTART)
 		 || hu_font[c] == NULL)
-			continue;	
+			continue;
 
 		if (lt_font[c]->height > w)
 			w = lt_font[c]->height;
@@ -1722,7 +1722,7 @@ void V_Init(void)
 	{
 		for (i = 0; i < NUMSCREENS; i++)
 			screens[i] = base + i*screensize;
-	
+
 		// statusbar buffer
 		screens[4] = base + NUMSCREENS*screensize;
 	}

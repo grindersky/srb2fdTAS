@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -337,4 +337,32 @@ void SCR_ChangeFullscreen(void)
 	}
 	return;
 #endif
+}
+
+// XMOD FPS display
+// moved out of os-specific code for consistency
+static boolean fpsgraph[TICRATE];
+static tic_t lasttic;
+
+void SCR_DisplayTicRate(void)
+{
+	tic_t i;
+	tic_t ontic = I_GetTime();
+	tic_t totaltics = 0;
+
+	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
+		fpsgraph[i % TICRATE] = false;
+
+	fpsgraph[ontic % TICRATE] = true;
+
+	for (i = 0;i < TICRATE;++i)
+		if (fpsgraph[i])
+			++totaltics;
+
+	V_DrawString(vid.width-(24*vid.dupx), vid.height-(16*vid.dupy),
+		V_YELLOWMAP|V_NOSCALESTART, "FPS");
+	V_DrawString(vid.width-(40*vid.dupx), vid.height-( 8*vid.dupy),
+		V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
+
+	lasttic = ontic;
 }

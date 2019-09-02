@@ -68,6 +68,7 @@
 #     Compile without 3D sound support, add 'NOHS=1'
 #     Compile with GDBstubs, add 'RDB=1'
 #     Compile without PNG, add 'NOPNG=1'
+#     Compile without zlib, add 'NOZLIB=1'
 #
 # Addon for SDL:
 #     To Cross-Compile, add 'SDL_CONFIG=/usr/*/bin/sdl-config'
@@ -88,6 +89,7 @@ include makefile.cfg
 ifdef DUMMY
 NOPNG=1
 NOMNG=1
+NOZLIB=1
 NONET=1
 NOHW=1
 NOHS=1
@@ -194,6 +196,32 @@ PNG_CFLAGS?=$(shell $(PNG_CONFIG) --cflags)
 PNG_LDFLAGS?=$(shell $(PNG_CONFIG) --ldflags)
 endif
 endif
+
+LIBS+=$(PNG_LDFLAGS)
+CFLAGS+=$(PNG_CFLAGS)
+endif
+
+ifdef HAVE_LIBGME
+OPTS+=-DHAVE_LIBGME
+
+LIBGME_PKGCONFIG?=libgme
+LIBGME_CFLAGS?=$(shell $(PKG_CONFIG) $(LIBGME_PKGCONFIG) --cflags)
+LIBGME_LDFLAGS?=$(shell $(PKG_CONFIG) $(LIBGME_PKGCONFIG) --libs)
+
+LIBS+=$(LIBGME_LDFLAGS)
+CFLAGS+=$(LIBGME_CFLAGS)
+endif
+
+ifndef NOZLIB
+OPTS+=-DHAVE_ZLIB
+ZLIB_PKGCONFIG?=zlib
+ZLIB_CFLAGS?=$(shell $(PKG_CONFIG) $(ZLIB_PKGCONFIG) --cflags)
+ZLIB_LDFLAGS?=$(shell $(PKG_CONFIG) $(ZLIB_PKGCONFIG) --libs)
+
+LIBS+=$(ZLIB_LDFLAGS)
+CFLAGS+=$(ZLIB_CFLAGS)
+else
+NOPNG=1
 endif
 
 ifdef NOMD5
@@ -218,7 +246,7 @@ else
 
 	# build a normal optimised version
 	WINDRESFLAGS = -DNDEBUG
-	CFLAGS += $(OPTS) $(M5) -O3 $(WINDRESFLAGS)
+	CFLAGS += $(OPTS) $(M5) -Os $(WINDRESFLAGS)
 		# -fgcse -fcse-follow-jumps -fcse-skip-blocks -frerun-cse-after-loop -ffunction-cse \
 		# -fexpensive-optimizations -fforce-mem -fstrength-reduce -fthread-jumps  \
 		# -fregmove -fschedule-insns -fschedule-insns2 -fmove-all-movables \
@@ -399,11 +427,11 @@ all_dll: fmod_so openal_so
 
 fmod_so: $(OBJDIR)/s_fmod.o
 	@echo Linking S_FMOD.so...
-	$(CC) $(CFLAGS) -O3 -o $(BIN)/s_fmod.so -shared -nostartfiles $(OBJDIR)/s_fmod.o -L. -lfmod -lm
+	$(CC) $(CFLAGS) -Os -o $(BIN)/s_fmod.so -shared -nostartfiles $(OBJDIR)/s_fmod.o -L. -lfmod -lm
 
 openal_so: $(OBJDIR)/s_openal.o
 	@echo Linking S_OpenAL.so...
-	$(CC) $(CFLAGS) -O3 -o $(BIN)/s_openal.so -shared -nostartfiles $(OBJDIR)/s_openal.o -lopenal -lm
+	$(CC) $(CFLAGS) -Os -o $(BIN)/s_openal.so -shared -nostartfiles $(OBJDIR)/s_openal.o -lopenal -lm
 
 endif
 
@@ -531,15 +559,15 @@ endif
 ifndef NOHS
 $(OBJDIR)/s_ds3d.o: hardware/s_ds3d/s_ds3d.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -O3 -o $(OBJDIR)/s_ds3d.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_ds3d/s_ds3d.c
+	$(CC) $(M5) -Os -o $(OBJDIR)/s_ds3d.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_ds3d/s_ds3d.c
 
 $(OBJDIR)/s_fmod.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -O3 -o $(OBJDIR)/s_fmod.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_fmod/s_fmod.c
+	$(CC) $(M5) -Os -o $(OBJDIR)/s_fmod.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_fmod/s_fmod.c
 
 $(OBJDIR)/s_openal.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -O3 -o $(OBJDIR)/s_openal.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_openal/s_openal.c
+	$(CC) $(M5) -Os -o $(OBJDIR)/s_openal.o $(WFLAGS) -D_WINDOWS -mwindows -c hardware/s_openal/s_openal.c
 endif
 endif
 endif
@@ -563,11 +591,11 @@ else
 
 $(OBJDIR)/s_fmod.o: hardware/s_fmod/s_fmod.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -O3 -o $(OBJDIR)/s_fmod.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_fmod/s_fmod.c
+	$(CC) $(M5) -Os -o $(OBJDIR)/s_fmod.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_fmod/s_fmod.c
 
 $(OBJDIR)/s_openal.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
-	$(CC) $(M5) -O3 -o $(OBJDIR)/s_openal.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_openal/s_openal.c
+	$(CC) $(M5) -Os -o $(OBJDIR)/s_openal.o -DHW3SOUND -DUNIXLIKE -shared -nostartfiles -c hardware/s_openal/s_openal.c
 endif
 
 ifndef NOFILTERS

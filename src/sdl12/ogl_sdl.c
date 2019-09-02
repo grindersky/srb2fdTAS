@@ -119,7 +119,7 @@ boolean OglSdlSurface(int w, int h, boolean isFullscreen)
 		glColorTableEXT = SDL_GL_GetProcAddress("glColorTableEXT");
 	else
 		glColorTableEXT = NULL;
-	
+
 #endif
 #ifdef USE_WGL_SWAP
 	if (isExtAvailable("WGL_EXT_swap_control", gl_extensions))
@@ -160,7 +160,7 @@ boolean OglSdlSurface(int w, int h, boolean isFullscreen)
 
 	\param	vidwait	wait for video sync
 
-	\return	void	
+	\return	void
 */
 void OglSdlFinishUpdate(boolean waitvbl)
 {
@@ -177,7 +177,7 @@ void OglSdlFinishUpdate(boolean waitvbl)
 	}
 	oldwaitvbl = waitvbl;
 
-	SDL_GL_SwapBuffers();
+	SDL_GL_SwapWindow(window)
 }
 
 /**	\brief Shutdown OpenGL/SDL system

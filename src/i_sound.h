@@ -225,7 +225,8 @@ int I_RegisterSong(void *data, int len);
 
 	\todo pass music name, not handle
 */
-boolean I_PlaySong(boolean looping);
+boolean I_PlaySong(boolean looping, int pos);
+boolean I_LoadSong(char *data, size_t len, size_t selectpos);
 
 /**	\brief	Stops a song over 3 seconds
 

@@ -190,7 +190,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen)
 		if (fullscreen)
 		{
 			wasfullscreen = SDL_TRUE;
-			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		}
 		else // windowed mode
 		{
@@ -215,7 +215,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen)
 		SDL_SetWindowSize(window, width, height);
 		if (fullscreen)
 		{
-			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		}
 	}
 
@@ -1026,6 +1026,9 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
+	if (cv_ticrate.value)
+		SCR_DisplayTicRate();
+
 	if (rendermode == render_soft && screens[0])
 	{
 		SDL_Rect rect;
@@ -1310,7 +1313,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 		return SDL_FALSE;
 
 	if (fullscreen)
-		flags |= SDL_WINDOW_FULLSCREEN;
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
 	if (borderlesswindow)
 		flags |= SDL_WINDOW_BORDERLESS;
@@ -1319,8 +1322,6 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 	if (rendermode == render_opengl)
 		flags |= SDL_WINDOW_OPENGL;
 #endif
-
-	flags |= SDL_WINDOW_RESIZABLE;
 
 	// Create a window
 	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -1353,8 +1354,6 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 			flags |= SDL_RENDERER_SOFTWARE;
 		else if (cv_vidwait.value)
 			flags |= SDL_RENDERER_PRESENTVSYNC;
-
-		flags |= SDL_RENDERER_ACCELERATED;
 
 		renderer = SDL_CreateRenderer(window, -1, flags);
 		if (renderer == NULL)

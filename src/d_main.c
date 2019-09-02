@@ -1289,7 +1289,7 @@ void D_SRB2Main(void)
 	if (gameskill >= sk_insane && !(grade & 128))
 		gameskill = sk_insane-1;
 
-#if defined (UNIXLIKE) || defined (SDL)
+#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 #endif
 
