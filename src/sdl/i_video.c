@@ -954,10 +954,10 @@ void I_OsPolling(void)
 	mod = SDL_GetModState();
 	/* Handle here so that our state is always synched with the system. */
 	shiftdown = altdown = 0;
-	if (mod & KMOD_LSHIFT) shiftdown |= 1;
-	if (mod & KMOD_RSHIFT) shiftdown |= 2;
-	if (mod & KMOD_LALT)     altdown |= 1;
-	if (mod & KMOD_RALT)     altdown |= 2;
+	if (mod & KMOD_LSHIFT) shiftdown |= SDL_TRUE;
+	if (mod & KMOD_RSHIFT) shiftdown |= SDL_TRUE;
+	if (mod & KMOD_LALT)     altdown |= SDL_TRUE;
+	if (mod & KMOD_RALT)     altdown |= SDL_TRUE;
 }
 
 //
@@ -1503,6 +1503,9 @@ void I_StartupGraphics(void)
 		HWD.pfnDrawMD2         = hwSym("DrawMD2",NULL);
 		HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
 		HWD.pfnGetRenderVersion = hwSym("GetRenderVersion",NULL);
+		HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
+		HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
+		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
 #ifdef SHUFFLE
 		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
 #endif

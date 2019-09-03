@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -70,6 +70,10 @@ EXPORT void HWRAPI(SetTransform) (FTransform *transform);
 EXPORT int HWRAPI(GetTextureUsed) (void);
 EXPORT int HWRAPI(GetRenderVersion) (void);
 
+EXPORT void HWRAPI(MakeScreenFinalTexture) (void);
+EXPORT void HWRAPI(DrawScreenFinalTexture) (int width, int height);
+EXPORT void HWRAPI(FlushScreenTextures) (void);
+
 #ifdef VID_X11 // ifdef to be removed as soon as windoze supports that as well
 // metzgermeister: added for Voodoo detection
 EXPORT char *HWRAPI(GetRenderer) (void);
@@ -99,6 +103,9 @@ struct hwdriver_s
 	SetTransform        pfnSetTransform;
 	GetTextureUsed      pfnGetTextureUsed;
 	GetRenderVersion    pfnGetRenderVersion;
+	MakeScreenFinalTexture  pfnMakeScreenFinalTexture;
+	DrawScreenFinalTexture  pfnDrawScreenFinalTexture;
+	FlushScreenTextures pfnFlushScreenTextures;
 #ifdef _WINDOWS
 	GetModeList         pfnGetModeList;
 #endif

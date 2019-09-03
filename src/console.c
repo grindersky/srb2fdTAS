@@ -546,8 +546,6 @@ void CON_Ticker(void)
 //
 boolean CON_Responder(event_t *ev)
 {
-	shiftdown = 0;
-
 	// sequential completions a la 4dos
 	static char completion[80];
 	static int comskips, varskips;

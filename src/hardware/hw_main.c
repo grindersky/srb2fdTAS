@@ -476,7 +476,7 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, fixed_t fi
 	for (i = 0; i < nrPlaneVerts; i++,v3d++,pv++)
 	{
 		// Hurdler: add scrolling texture on floor/ceiling
-		float scrollx = 0.0f, scrolly = 0.0f; 
+		float scrollx = 0.0f, scrolly = 0.0f;
 
 		if (FOFsector != NULL)
 		{
@@ -536,7 +536,7 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, fixed_t fi
 	// use different light tables
 	// for horizontal / vertical / diagonal
 	// note: try to get the same visual feel as the original
-	Surf.FlatColor.s.red = Surf.FlatColor.s.green = 
+	Surf.FlatColor.s.red = Surf.FlatColor.s.green =
 	Surf.FlatColor.s.blue = LightLevelToLum(lightlevel); // Don't take from the frontsector
 
 	// colormap test
@@ -569,7 +569,7 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, fixed_t fi
 	{
 		Surf.FlatColor.s.alpha = (byte)(PolyFlags>>24);
 		HWD.pfnDrawPolygon(&Surf, planeVerts, nrPlaneVerts,
-		   PF_Translucent|PF_Modulated|PF_Occlude|PF_Clip);
+		   PF_Translucent|PF_Modulated|PF_Clip);
 	}
 	else
 	{
@@ -734,11 +734,11 @@ FBITFIELD HWR_TranstableToAlpha(int transtablenum, FSurfaceInfo *pSurf)
 {
 	switch (transtablenum)
 	{
-		case tr_transmed : pSurf->FlatColor.s.alpha = 0x80;return  PF_Translucent; 
-		case tr_transmor : pSurf->FlatColor.s.alpha = 0x40;return  PF_Translucent; 
-		case tr_transhi  : pSurf->FlatColor.s.alpha = 0x30;return  PF_Translucent; 
-		case tr_transfir : pSurf->FlatColor.s.alpha = 0x80;return  PF_Additive;    
-		case tr_transfx1 : pSurf->FlatColor.s.alpha = 0xff;return  PF_Translucent; 
+		case tr_transmed : pSurf->FlatColor.s.alpha = 0x80;return  PF_Translucent;
+		case tr_transmor : pSurf->FlatColor.s.alpha = 0x40;return  PF_Translucent;
+		case tr_transhi  : pSurf->FlatColor.s.alpha = 0x30;return  PF_Translucent;
+		case tr_transfir : pSurf->FlatColor.s.alpha = 0x80;return  PF_Additive;
+		case tr_transfx1 : pSurf->FlatColor.s.alpha = 0xff;return  PF_Translucent;
 	}
 	return PF_Translucent;
 }
@@ -790,7 +790,7 @@ static void HWR_ProjectWall(wallVert3D   * wallVerts,
 	//Hurdler: TDOD: do static lighting using gr_curline->lm
 	HWR_WallLighting(trVerts);
 
-	//Hurdler: for better dynamic light in dark area, we should draw the light first 
+	//Hurdler: for better dynamic light in dark area, we should draw the light first
 	//         and then the wall all that with the right blending func
 	//HWD.pfnDrawPolygon(pSurf, trVerts, 4, PF_Additive|PF_Modulated|PF_Occlude|PF_Clip);
 }
@@ -834,7 +834,7 @@ static float HWR_ClipViewSegment(int x, polyvertex_t *v1, polyvertex_t *v2)
 
 //
 // HWR_SplitWall
-// 
+//
 static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, int texnum, FSurfaceInfo* Surf, int cutflag)
 {
 	/* SoM: split up and light walls according to the
@@ -846,7 +846,7 @@ static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, int texnum, F
 	float height, bheight = 0;
 	int   solid, i;
 	lightlist_t *  list = sector->lightlist;
-			
+
 	realtop = top = wallVerts[2].y;
 	realbot = bot = wallVerts[0].y;
 	pegt = wallVerts[2].t;
@@ -869,7 +869,7 @@ static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, int texnum, F
 
 		height = FIXED_TO_FLOAT(list[i].height);
 		if (solid)
-			bheight = FIXED_TO_FLOAT(*list[i].caster->bottomheight);  
+			bheight = FIXED_TO_FLOAT(*list[i].caster->bottomheight);
 
 		if (height >= top)
 		{
@@ -939,18 +939,18 @@ static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, int texnum, F
 	{
 		FUINT   lightnum;
 		sector_t    *psector;
-	
+
 		lightnum = LightLevelToLum(*list[i-1].lightlevel);
 		// store Surface->FlatColor to modulate wall texture
 		Surf->FlatColor.s.red = Surf->FlatColor.s.green = Surf->FlatColor.s.blue
 			= (byte)lightnum;
-	
+
 		psector =  list[i-1].caster ? &sectors[list[i-1].caster->secnum] : gr_frontsector;
 		if (psector->extra_colormap)
 		{
 			RGBA_t  temp;
 			int     alpha;
-		
+
 			temp.rgba = psector->extra_colormap->rgba;
 			alpha = (26 - temp.s.alpha)*lightnum;
 			Surf->FlatColor.s.red = (unsigned char)((alpha + temp.s.alpha*temp.s.red)/26);
@@ -962,7 +962,7 @@ static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, int texnum, F
 
 	wallVerts[3].t = wallVerts[2].t = pegt + ((realtop - top) * pegmul);
 	wallVerts[0].t = wallVerts[1].t = pegt + ((realtop - bot) * pegmul);
-			
+
 	// set top/bottom coords
 	wallVerts[2].y = wallVerts[3].y = top;
 	wallVerts[0].y = wallVerts[1].y = bot;
@@ -1069,7 +1069,7 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 	wallVerts[2].z = wallVerts[1].z = ve.y;
 	wallVerts[0].w = wallVerts[1].w = wallVerts[2].w = wallVerts[3].w = 1.0f;
 
-	if (drawtextured) 
+	if (drawtextured)
 	{
 		// x offset the texture
 		fixed_t texturehpeg = gr_sidedef->textureoffset + gr_curline->offset;
@@ -1079,7 +1079,7 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 			cliplow = texturehpeg + gr_curline->length * startfrac;
 		else
 			cliplow = (float)texturehpeg;
-		
+
 		if (endfrac > 0 && endfrac < 1)
 			cliphigh = texturehpeg + gr_curline->length  * endfrac;
 		else
@@ -1166,21 +1166,21 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 				fixed_t texturevpegtop; // top
 
 				grTex = HWR_GetTexture(texturetranslation[gr_sidedef->toptexture]);
-				
+
 				// PEGGING
 				if (gr_linedef->flags & ML_DONTPEGTOP)
 					texturevpegtop = 0;
 				else
 					texturevpegtop = worldhigh + textureheight[gr_sidedef->toptexture] - worldtop;
-				
+
 				texturevpegtop += gr_sidedef->rowoffset;
-				
+
 				wallVerts[3].t = wallVerts[2].t = texturevpegtop * grTex->scaleY;
 				wallVerts[0].t = wallVerts[1].t = (texturevpegtop + worldtop - worldhigh) * grTex->scaleY;
 				wallVerts[0].s = wallVerts[3].s = cliplow * grTex->scaleX;
 				wallVerts[2].s = wallVerts[1].s = cliphigh * grTex->scaleX;
 			}
-			
+
 			// set top/bottom coords
 			wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(worldtop);
 			wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldhigh);
@@ -1201,25 +1201,25 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 				fixed_t texturevpegbottom = 0; // bottom
 
 				grTex = HWR_GetTexture(texturetranslation[gr_sidedef->bottomtexture]);
-				
+
 				// PEGGING
 				if (gr_linedef->flags & ML_DONTPEGBOTTOM)
 					texturevpegbottom = worldtop - worldlow;
 				else
 					texturevpegbottom = 0;
-				
+
 				texturevpegbottom += gr_sidedef->rowoffset;
-				
+
 				wallVerts[3].t = wallVerts[2].t = texturevpegbottom * grTex->scaleY;
 				wallVerts[0].t = wallVerts[1].t = (texturevpegbottom + worldlow - worldbottom) * grTex->scaleY;
 				wallVerts[0].s = wallVerts[3].s = cliplow * grTex->scaleX;
 				wallVerts[2].s = wallVerts[1].s = cliphigh * grTex->scaleX;
 			}
-			
+
 			// set top/bottom coords
 			wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(worldlow);
 			wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldbottom);
-			
+
 			if (gr_frontsector->numlights)
 				HWR_SplitWall(gr_frontsector, wallVerts, texturetranslation[gr_sidedef->bottomtexture], &Surf, FF_CUTSOLIDS);
 			else if (grTex->mipmap.flags & TF_TRANSPARENT)
@@ -1265,7 +1265,7 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 			// record the limits the texture can be displayed in.
 			// polytop and polybottom, are the ideal (i.e. unclipped)
 			// heights of the polygon, and h & l, are the final (clipped)
-			// poly coords. 
+			// poly coords.
 
 			popentop = worldtop < worldhigh ? worldtop : worldhigh;
 			popenbottom = worldbottom > worldlow ? worldbottom : worldlow;
@@ -1292,14 +1292,14 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 				h = polytop;
 			else
 				h = polytop < popentop ? polytop : popentop;
-			  
+
 			if ((fvisiblefloor == bvisiblefloor)
 			 /*    || (gr_linedef->flags & ML_DONTDRAW)*/)
 				l = polybottom;
 			else
 				l = polybottom > popenbottom ? polybottom : popenbottom;
 
-			if (drawtextured) 
+			if (drawtextured)
 			{
 				// PEGGING
 				if (gr_linedef->flags & ML_DONTPEGBOTTOM)
@@ -1320,7 +1320,7 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 			// where the polygon might not be.
 			wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(h - texturevpeg);
 			wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(l - texturevpeg);
-	
+
 			// set alpha for transparent walls (new boom and legacy linedef types)
 			// ooops ! this do not work at all because render order we should render it in backtofront order
 			switch (gr_linedef->special)
@@ -1359,11 +1359,11 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 		gr_midtexture = texturetranslation[gr_sidedef->midtexture];
 		if (gr_midtexture)
 		{
-			if (drawtextured) 
+			if (drawtextured)
 			{
 				fixed_t     texturevpeg;
 				// PEGGING
-				if (gr_linedef->flags & ML_DONTPEGBOTTOM) 
+				if (gr_linedef->flags & ML_DONTPEGBOTTOM)
 					texturevpeg = worldbottom + textureheight[gr_sidedef->midtexture] - worldtop + gr_sidedef->rowoffset;
 				else
 					// top of texture at top
@@ -1429,7 +1429,7 @@ static void HWR_StoreWallRange(int startfrac, int endfrac)
 				if (drawtextured)
 				{
 					grTex = HWR_GetTexture(texturetranslation[sides[rover->master->sidenum[0]].midtexture]);
-				
+
 					wallVerts[3].t = wallVerts[2].t = (*rover->topheight - h + sides[rover->master->sidenum[0]].rowoffset) * grTex->scaleY;
 					wallVerts[0].t = wallVerts[1].t = (h - l + (*rover->topheight - h + sides[rover->master->sidenum[0]].rowoffset)) * grTex->scaleY;
 					wallVerts[0].s = wallVerts[3].s = cliplow * grTex->scaleX;
@@ -1571,7 +1571,7 @@ static void HWR_ClipSolidWallSegment(int first, int last)
 			HWR_StoreWallRange(first, last);
 
 			next = hw_newend;
-			hw_newend++;	
+			hw_newend++;
 
 			while (next != start)
 			{
@@ -1821,7 +1821,7 @@ static void HWR_AddLine(seg_t * line)
 	angle_t span, tspan;
 
 	// SoM: Backsector needs to be run through R_FakeFlat
-	sector_t tempsec; 
+	sector_t tempsec;
 
 	gr_curline = line;
 
@@ -1877,7 +1877,7 @@ static void HWR_AddLine(seg_t * line)
 			fx1 = 0;
 		else
 			fx1 = gr_windowcenterx + (fx1 * gr_viewsin - fy1 * gr_viewcos) * gr_centerx / fy2;
-	
+
 		fx2 = ((polyvertex_t *)(line->v2))->x-gr_viewx;
 		fy2 = ((polyvertex_t *)(line->v2))->y-gr_viewy;
 		fy1 = (fx2 * gr_viewcos + fy2 * gr_viewsin);
@@ -1886,7 +1886,7 @@ static void HWR_AddLine(seg_t * line)
 			fx2 = vid.width;
 		else
 			fx2 = gr_windowcenterx + (fx2 * gr_viewsin - fy2 * gr_viewcos) * gr_centerx / fy1;
-	
+
 		x1 = fx1+0.5f;
 		x2 = fx2+0.5f;
 	}
@@ -1934,7 +1934,7 @@ static void HWR_AddLine(seg_t * line)
 	    && gr_backsector->lightlevel == gr_frontsector->lightlevel
 	    && gr_curline->sidedef->midtexture == 0
 	    && !gr_backsector->ffloors && !gr_frontsector->ffloors)
-		// SoM: For 3D sides... Boris, would you like to take a 
+		// SoM: For 3D sides... Boris, would you like to take a
 		// crack at rendering 3D sides? You would need to add the
 		// above check and add code to HWR_StoreWallRange...
 	{
@@ -2128,7 +2128,7 @@ static void HWR_Subsector(int num)
 	else
 	{
 		locFloorHeight   = gr_frontsector->floorheight;
-		locCeilingHeight = gr_frontsector->ceilingheight;       
+		locCeilingHeight = gr_frontsector->ceilingheight;
 	}
 // ----- end special tricks -----
 
@@ -2195,8 +2195,8 @@ static void HWR_Subsector(int num)
 		ffloor_t * rover;
 
 		R_Prep3DFloors(gr_frontsector);
-		for (rover = gr_frontsector->ffloors; 
-			rover; rover = rover->next) 
+		for (rover = gr_frontsector->ffloors;
+			rover; rover = rover->next)
 		{
 
 			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
@@ -2213,8 +2213,8 @@ static void HWR_Subsector(int num)
 				{
 					light = R_GetPlaneLight(gr_frontsector, *rover->bottomheight, dup_viewz < *rover->bottomheight ? true : false);
 					HWR_Add3DWater(levelflats[*rover->bottompic].lumpnum,
-					               &extrasubsectors[num], 
-					               *rover->bottomheight, 
+					               &extrasubsectors[num],
+					               *rover->bottomheight,
 					               *gr_frontsector->lightlist[light].lightlevel,
 					               rover->alpha, rover->master->frontsector);
 				}
@@ -2235,8 +2235,8 @@ static void HWR_Subsector(int num)
 				{
 					light = R_GetPlaneLight(gr_frontsector, *rover->topheight, dup_viewz < *rover->topheight ? true : false);
 					HWR_Add3DWater(levelflats[*rover->toppic].lumpnum,
-					                          &extrasubsectors[num], 
-					                          *rover->topheight, 
+					                          &extrasubsectors[num],
+					                          *rover->topheight,
 					                          *gr_frontsector->lightlist[light].lightlevel,
 					                          rover->alpha, rover->master->frontsector);
 				}
@@ -2552,7 +2552,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		firetranslucent = false;
 	}
 	else
-		gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);    
+		gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
 
 	if (!(spr->mobj->flags2 & MF2_DEBRIS))
 		HWR_DL_AddLight(spr, gpatch);
@@ -2690,7 +2690,7 @@ static void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 	FSurfaceInfo Surf;
 
 	// cache sprite graphics
-	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);    
+	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
 
 	// create the sprite billboard
 	//
@@ -3093,7 +3093,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (thing->state && (thing->state->frame & FF_FULLBRIGHT))
 		/// \todo disable also the fog
 		vis->sectorlight = 0xff;
-	else 
+	else
 		vis->sectorlight = sectorlight;
 
 	vis->precip = false;
@@ -3311,7 +3311,7 @@ void HWR_SetViewSize(int blocks)
 
 	gr_viewwindowx = (vid.width - gr_viewwidth) / 2;
 	gr_windowcenterx = (float)(vid.width / 2);
-	if (gr_viewwidth == vid.width) 
+	if (gr_viewwidth == vid.width)
 	{
 		gr_baseviewwindowy = 0;
 		gr_basewindowcentery = gr_viewheight / 2;               // window top left corner at 0,0
@@ -3324,6 +3324,8 @@ void HWR_SetViewSize(int blocks)
 
 	gr_pspritexscale = gr_viewwidth / BASEVIDWIDTH;
 	gr_pspriteyscale = ((vid.height*gr_pspritexscale*BASEVIDWIDTH)/BASEVIDHEIGHT)/vid.width;
+
+    HWD.pfnFlushScreenTextures();
 }
 
 //Hurdler: 3D water sutffs
@@ -3383,7 +3385,7 @@ void HWR_RenderPlayerView(int viewnumber, player_t *player)
 	atransform.y      = gr_viewy;  // FIXED_TO_FLOAT(viewy)
 	atransform.z      = gr_viewz;  // FIXED_TO_FLOAT(viewz)
 	atransform.scalex = 1;
-	atransform.scaley = ORIGINAL_ASPECT;
+	atransform.scaley = (float)vid.width/vid.height;
 	atransform.scalez = 1;
 	atransform.fovxangle = FIXED_TO_FLOAT(cv_grfov.value)+grfovadjust; // Tails
 	atransform.fovyangle = FIXED_TO_FLOAT(cv_grfov.value)+grfovadjust; // Tails
@@ -3400,7 +3402,7 @@ void HWR_RenderPlayerView(int viewnumber, player_t *player)
 
 	if (cv_grfog.value)
 		HWR_FoggingOn();
-	
+
 	if (cv_grsky.value)
 		HWR_DrawSkyBackground(player);
 
@@ -3622,7 +3624,7 @@ void HWR_Startup(void)
 	gr_patch_scalex = (float)(1.0f / vid.width);
 	gr_patch_scaley = (float)(1.0f / vid.height);
 
-	// initalze light lut translation 
+	// initalze light lut translation
 	InitLumLut();
 
 	// do this once
@@ -3660,6 +3662,7 @@ void HWR_Shutdown(void)
 	HWR_FreeExtraSubsectors();
 	HWR_FreePolyPool();
 	HWR_FreeTextureCache();
+    HWD.pfnFlushScreenTextures();
 }
 
 void transform(float *cx, float *cy, float *cz)
@@ -3669,17 +3672,17 @@ void transform(float *cx, float *cy, float *cz)
 	tr_x = *cx - gr_viewx;
 	tr_y = *cz - gr_viewy;
 //	*cy = *cy;
-	
+
 	// rotation around vertical y axis
 	*cx = (tr_x * gr_viewsin) - (tr_y * gr_viewcos);
 	tr_x = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
 
 	//look up/down ----TOTAL SUCKS!!!--- do the 2 in one!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	tr_y = *cy - gr_viewz;
-	
+
 	*cy = (tr_x * gr_viewludcos) + (tr_y * gr_viewludsin);
 	*cz = (tr_x * gr_viewludsin) - (tr_y * gr_viewludcos);
-	
+
 	//scale y before frustum so that frustum can be scaled to screen height
 	*cy *= ORIGINAL_ASPECT * gr_fovlud;
 	*cx *= gr_fovlud;
@@ -3742,7 +3745,7 @@ static void HWR_QuickSortPlane(int low, int high)
 		}
 		HWR_QuickSortPlane(low, hi-1);
 		HWR_QuickSortPlane(hi+1, high);
-	} 
+	}
 }
 
 
@@ -3789,7 +3792,7 @@ static void HWR_Render3DWater(void)
 #define MAX_TRANSPARENTWALL 256
 
 typedef struct
-{ 
+{
 	wallVert3D    wallVerts[4];
 	FSurfaceInfo  Surf;
 	int           texnum;
@@ -3884,4 +3887,14 @@ void HWR_SetPaletteColor(int palcolor)
 int HWR_GetTextureUsed(void)
 {
 	return HWD.pfnGetTextureUsed();
+}
+
+void HWR_MakeScreenFinalTexture(void)
+{
+    HWD.pfnMakeScreenFinalTexture();
+}
+
+void HWR_DrawScreenFinalTexture(int width, int height)
+{
+    HWD.pfnDrawScreenFinalTexture(width, height);
 }

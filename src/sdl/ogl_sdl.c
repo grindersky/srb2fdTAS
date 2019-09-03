@@ -94,39 +94,10 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	DBG_Printf("Extensions : %s\n", gl_extensions);
 	oglflags = 0;
 
-#if defined (_WIN32) || defined (_WIN64)
-	// BP: disable advenced feature that don't work on somes hardware
-	// Hurdler: Now works on G400 with bios 1.6 and certified drivers 6.04
-	if (strstr(glrenderer, "810")) oglflags |= GLF_NOZBUFREAD;
-#elif defined (UNIXLIKE)
-	// disable advanced features not working on somes hardware
-	if (strstr(glrenderer, "G200")) oglflags |= GLF_NOTEXENV;
-	if (strstr(glrenderer, "G400")) oglflags |= GLF_NOTEXENV;
-#endif
-	DBG_Printf("oglflags   : 0x%X\n", oglflags );
-
-#ifdef USE_PALETTED_TEXTURE
-	if (isExtAvailable("GL_EXT_paletted_texture", gl_extensions))
-		glColorTableEXT = SDL_GL_GetProcAddress("glColorTableEXT");
-	else
-		glColorTableEXT = NULL;
-
-#endif
-#ifdef USE_WGL_SWAP
-	if (isExtAvailable("WGL_EXT_swap_control", gl_extensions))
-		wglSwapIntervalEXT = SDL_GL_GetProcAddress("wglSwapIntervalEXT");
-	else
-		wglSwapIntervalEXT = NULL;
-#else
-	if (isExtAvailable("SGI_swap_control", gl_extensions))
-		glXSwapIntervalSGIEXT = SDL_GL_GetProcAddress("glXSwapIntervalSGI");
-	else
-		glXSwapIntervalSGIEXT = NULL;
-#endif
 	if (isExtAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
 		glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maximumAnisotropy);
 	else
-		maximumAnisotropy = 0;
+		maximumAnisotropy = 1;
 
 	granisotropicmode_cons_t[1].value = maximumAnisotropy;
 
@@ -141,7 +112,6 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 
 	return true;
 }
-
 /**	\brief	The OglSdlFinishUpdate function
 
 	\param	vidwait	wait for video sync
@@ -151,21 +121,23 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 void OglSdlFinishUpdate(boolean waitvbl)
 {
 	static boolean oldwaitvbl = false;
-	if(oldwaitvbl != waitvbl)
+	int sdlw, sdlh;
+	if (oldwaitvbl != waitvbl)
 	{
-#ifdef USE_WGL_SWAP
-		if (wglSwapIntervalEXT)
-			wglSwapIntervalEXT(waitvbl);
-#else
-		if (glXSwapIntervalSGIEXT)
-			glXSwapIntervalSGIEXT(waitvbl);
-#endif
+		SDL_GL_SetSwapInterval(waitvbl ? 1 : 0);
 	}
+
 	oldwaitvbl = waitvbl;
 
+	SDL_GetWindowSize(window, &sdlw, &sdlh);
+
+	HWR_MakeScreenFinalTexture();
+	HWR_DrawScreenFinalTexture(sdlw, sdlh);
 	SDL_GL_SwapWindow(window);
 
 	GClipRect(0, 0, realwidth, realheight, NZCLIP_PLANE);
+
+	HWR_DrawScreenFinalTexture(realwidth, realheight);
 }
 
 EXPORT void HWRAPI( OglSdlSetPalette) (RGBA_t *palette, RGBA_t *pgamma)
