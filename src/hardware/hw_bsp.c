@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -119,14 +119,14 @@ static poly_t *HWR_AllocPoly(int numpts)
 #endif
 
 	if (gr_ppfree < size)
-		I_Error("HWR_AllocPoly(): no more memory %u bytes left, %u bytes needed\n\n%s\n", 
+		I_Error("HWR_AllocPoly(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
 				  gr_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
 
 	p = (poly_t *)gr_ppcurrent;
 	gr_ppcurrent += size;
 	gr_ppfree -= size;
 #endif
-	p->numpts = numpts;    
+	p->numpts = numpts;
 	return p;
 }
 
@@ -138,7 +138,7 @@ static polyvertex_t *HWR_AllocVertex(void)
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
 #else
 	if (gr_ppfree < size)
-		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n", 
+		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
 		          gr_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
 
 	p = (polyvertex_t *)gr_ppcurrent;
@@ -306,7 +306,7 @@ static void SplitPoly (fdivline_t *bsp,         //splitting parametric line
 				// thus, don't accept, since split 2 must be another vertex
 				if (SameVertice(pv, &lastpv))
 				{
-					if (pe < 0) 
+					if (pe < 0)
 					{
 						ps = i;
 						psonline = 1;
@@ -440,18 +440,18 @@ static void SplitPoly (fdivline_t *bsp,         //splitting parametric line
 static poly_t *CutOutSubsecPoly(seg_t *lseg, int count, poly_t *poly)
 {
 	int i, j;
-	
+
 	polyvertex_t *pv;
-	
+
 	int nump = 0, ps, pe;
 	polyvertex_t vs = {0, 0, 0}, ve = {0, 0, 0},
 		p1 = {0, 0, 0}, p2 = {0, 0, 0};
 	float fracs = 0.0f;
-	
+
 	fdivline_t cutseg; // x, y, dx, dy as start of node_t struct
-	
+
 	poly_t *temppoly;
-	
+
 	// for each seg of the subsector
 	for (; count--; lseg++)
 	{
@@ -466,7 +466,7 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, int count, poly_t *poly)
 		cutseg.y = p1.y;
 		cutseg.dx = p2.x - p1.x;
 		cutseg.dy = p2.y - p1.y;
-		
+
 		// see if it cuts the convex poly
 		ps = -1;
 		pe = -1;
@@ -475,9 +475,9 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, int count, poly_t *poly)
 			j = i + 1;
 			if (j == poly->numpts)
 				j = 0;
-			
+
 			pv = fracdivline(&cutseg, &poly->pts[i], &poly->pts[j]);
-			
+
 			if (pv)
 			{
 				if (ps < 0)
@@ -496,7 +496,7 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, int count, poly_t *poly)
 					// on most borders
 					if (SameVertice(pv, &vs))
 						continue;
-					
+
 					if (fracs <= bspfrac)
 					{
 						nump = 2 + poly->numpts - (i-ps);
@@ -516,7 +516,7 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, int count, poly_t *poly)
 				}
 			}
 		}
-		
+
 		// there was a split
 		if (ps >= 0)
 		{
@@ -575,7 +575,7 @@ static inline void HWR_SubsecPoly(int num, poly_t *poly)
 	}
 }
 
-// the bsp divline have not enouth presition 
+// the bsp divline have not enouth presition
 // search for the segs source of this divline
 static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 {
@@ -622,7 +622,7 @@ static void WalkBSPNode(int bspnum, poly_t *poly, unsigned short *leafnode, fixe
 				extrasubsectors[addsubsector].planepoly = poly;
 				addsubsector++;
 			}
-			
+
 			//add subsectors without segs here?
 			//HWR_SubsecPoly(0, NULL);
 		}
@@ -680,7 +680,7 @@ static void WalkBSPNode(int bspnum, poly_t *poly, unsigned short *leafnode, fixe
 		memcpy(bbox, bsp->bbox[0], 4*sizeof (fixed_t));
 	}
 	else
-		I_Error("WalkBSPNode: no front poly?"); 
+		I_Error("WalkBSPNode: no front poly?");
 
 	// Recursively divide back space.
 	if (backpoly)
@@ -712,7 +712,7 @@ static boolean PointInSeg(polyvertex_t *a,polyvertex_t *v1,polyvertex_t *v2)
 {
 	register float ax,ay,bx,by,cx,cy,d,norm;
 	register polyvertex_t *p;
-	
+
 	// check bbox of the seg first
 	if (v1->x > v2->x)
 	{
@@ -822,8 +822,8 @@ static void SearchSegInBSP(int bspnum,polyvertex_t *p,poly_t *poly)
 
 // search for T-intersection problem
 // BP : It can be mush more faster doing this at the same time of the splitpoly
-// but we must use a different structure : polygone pointing on segs 
-// segs pointing on polygone and on vertex (too mush complicated, well not 
+// but we must use a different structure : polygone pointing on segs
+// segs pointing on polygone and on vertex (too mush complicated, well not
 // realy but i am soo lasy), the methode discibed is also better for segs presition
 static int SolveTProblem(void)
 {
@@ -853,9 +853,9 @@ static int SolveTProblem(void)
 #define NEARDIST (0.75f)
 #define MYMAX    (10000000000000.0f)
 
-/* Adjust true segs (from the segs lump) to be exactely the same as 
+/* Adjust true segs (from the segs lump) to be exactely the same as
  * plane polygone segs
- * This also convert fixed_t point of segs in float (in moste case 
+ * This also convert fixed_t point of segs in float (in moste case
  * it share the same vertice
  */
 static void AdjustSegs(void)
@@ -873,13 +873,13 @@ static void AdjustSegs(void)
 		p = extrasubsectors[i].planepoly;
 		if (!p)
 			continue;
-		for (; count--; lseg++)        
+		for (; count--; lseg++)
 		{
 			float distv1,distv2,tmp;
 			nearv1 = nearv2 = MYMAX;
 			for (j = 0; j < p->numpts; j++)
 			{
-				distv1 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v1->x); 
+				distv1 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v1->x);
 				tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v1->y);
 				distv1 = distv1*distv1+tmp*tmp;
 				if (distv1 <= nearv1)
@@ -888,7 +888,7 @@ static void AdjustSegs(void)
 					nearv1 = distv1;
 				}
 				// the same with v2
-				distv2 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v2->x); 
+				distv2 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v2->x);
 				tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v2->y);
 				distv2 = distv2*distv2+tmp*tmp;
 				if (distv2 <= nearv2)
@@ -922,7 +922,7 @@ static void AdjustSegs(void)
 				lseg->v2 = (vertex_t *)pv;
 			}
 
-			// recompute length 
+			// recompute length
 			{
 				float x,y;
 				x = ((polyvertex_t *)lseg->v2)->x - ((polyvertex_t *)lseg->v1)->x
@@ -954,7 +954,7 @@ void HWR_CreatePlanePolygons(int bspnum)
 	I_FinishUpdate(); // page flip or blit buffer
 
 	HWR_ClearPolys();
-	
+
 	// find min/max boundaries of map
 	//CONS_Printf("Looking for boundaries of map...\n");
 	M_ClearBox(rootbbox);

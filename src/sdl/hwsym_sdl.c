@@ -91,6 +91,9 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(DrawMD2);
 	GETFUNC(SetTransform);
 	GETFUNC(GetRenderVersion);
+	GETFUNC(MakeScreenFinalTexture);
+	GETFUNC(DrawScreenFinalTexture);
+	GETFUNC(FlushScreenTextures);
 #ifdef SHUFFLE
 	GETFUNC(PostImgRedraw);
 #endif //SHUFFLE

@@ -926,7 +926,7 @@ static boolean S_MIDIMusic(musicinfo_t *music, int looping)
 #endif
 
 	// play it
-	if (!I_PlaySong(looping))
+	if (!I_PlaySong(looping, 0))
 		return false;
 
 	mus_playing = music;

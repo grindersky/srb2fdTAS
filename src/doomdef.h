@@ -213,7 +213,7 @@ char *va(const char *format, ...) FUNCPRINTF;
 extern boolean devparm; // development mode (-debug)
 
 // Modifier key variables, accessible anywhere
-extern UINT8 shiftdown, altdown;
+extern boolean shiftdown, altdown;
 extern boolean capslock;
 
 // =======================

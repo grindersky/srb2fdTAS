@@ -90,6 +90,21 @@ static GLint       viewport[4];
 	GLubyte                 palette_tex[256*3];
 #endif
 
+// Yay for arbitrary  numbers! NextTexAvail is buggy for some reason.
+// Sryder:	NextTexAvail is broken for these because palette changes or changes to the texture filter or antialiasing
+//			flush all of the stored textures, leaving them unavailable at times such as between levels
+//			These need to start at 0 and be set to their number, and be reset to 0 when deleted so that intel GPUs
+//			can know when the textures aren't there, as textures are always considered resident in their virtual memory
+// TODO:	Store them in a more normal way
+#define SCRTEX_SCREENTEXTURE 65535
+#define SCRTEX_STARTSCREENWIPE 65534
+#define SCRTEX_ENDSCREENWIPE 65533
+#define SCRTEX_FINALSCREENTEXTURE 65532
+static GLuint screentexture = 0;
+static GLuint startScreenWipe = 0;
+static GLuint endScreenWipe = 0;
+static GLuint finalScreenTexture = 0;
+
 // shortcut for ((float)1/i)
 static const GLfloat byte2float[256] = {
 	0.000000f, 0.003922f, 0.007843f, 0.011765f, 0.015686f, 0.019608f, 0.023529f, 0.027451f,
@@ -166,6 +181,9 @@ FUNCPRINTF void DBG_Printf(const char *lpFmt, ...)
 }
 #endif
 
+#define pglActiveTexture glActiveTexture
+#define pglMultiTexCoord2f glMultiTexCoord2f
+
 // -----------------+
 // SetNoTexture     : Disable texture
 // -----------------+
@@ -186,6 +204,10 @@ static void SetNoTexture(void)
 void SetModelView(GLint w, GLint h)
 {
 	DBG_Printf("SetModelView(): %dx%d\n", w, h);
+
+	// The screen textures need to be flushed if the width or height change so that they be remade for the correct size
+	if (screen_width != w || screen_height != h)
+		FlushScreenTextures();
 
 	screen_width = w;
 	screen_height = h;
@@ -237,9 +259,11 @@ void SetStates(void)
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 #endif
 
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
 	//glDisable(GL_DITHER);         // faB: ??? (undocumented in OpenGL 1.1)
 								  // Hurdler: yes, it is!
-	glEnable(GL_DEPTH_TEST);    // check the depth buffer
+	glEnable(GL_DEPTH_TEST);     // check the depth buffer
 	//glDepthMask(1);             // enable writing to depth buffer
 	glClearDepth(1.0f);
 	glDepthRange(0.0f, 1.0f);
@@ -342,6 +366,14 @@ int isExtAvailable(const char *extension, const GLubyte *start)
 	return 0;
 }
 
+static void Clamp2D(GLenum pname)
+{
+	glTexParameteri(GL_TEXTURE_2D, pname, GL_CLAMP); // fallback clamp
+#ifdef GL_CLAMP_TO_EDGE
+	glTexParameteri(GL_TEXTURE_2D, pname, GL_CLAMP_TO_EDGE);
+#endif
+}
+
 
 // -----------------+
 // Init             : Initialise the OpenGL interface API
@@ -394,6 +426,80 @@ EXPORT void HWRAPI(ReadRect) (int x, int y, int width, int height,
 #endif
 }
 
+#ifdef HAVE_SDL
+EXPORT boolean HWRAPI(ReadScreenTexture) (INT32 x, INT32 y, INT32 width,
+                                            INT32 height, INT32 dst_stride,
+                                            UINT16 * dst_data)
+{
+#ifdef KOS_GL_COMPATIBILITY
+	(void)x;
+	(void)y;
+	(void)width;
+	(void)height;
+	(void)dst_stride;
+	(void)dst_data;
+#else
+	INT32 i, j;
+	INT32 texsize = 2048;
+	GLubyte *image;
+	// DBG_Printf ("ReadScreenTexture()\n");
+	if (screentexture == 0)
+		return false; // No screen texture
+
+	if(screen_width <= 1024)
+		texsize = 1024;
+	if(screen_width <= 512)
+		texsize = 512;
+
+	if (x < 0)
+		x = 0;
+	if (x + width > screen_width)
+		width = screen_width - x;
+	if (y < 0)
+		y = 0;
+	if (y + height > screen_height)
+		height = screen_height - y;
+
+	image = malloc(texsize*texsize*3*sizeof (*image));
+	if (!image)
+		return false;
+	glBindTexture(GL_TEXTURE_2D, finalScreenTexture);
+	tex_downloaded = finalScreenTexture;
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+	if (dst_stride == width*3)
+	{
+		UINT8 *dest = (void *)dst_data;
+		for (i = y + height-1; i >= y; i--)
+		{
+			for (j = x; j < width + x; j++)
+			{
+				dest[((height-1-i-y)*width+j-x)*3] = image[(i*texsize+j)*3];
+				dest[((height-1-i-y)*width+j-x)*3+1] = image[(i*texsize+j)*3+1];
+				dest[((height-1-i-y)*width+j-x)*3+2] = image[(i*texsize+j)*3+2];
+			}
+		}
+	}
+	else
+	{
+		// Sryder: NOTE: I'm not entirely sure this works, as far as I know nothing in the game uses it.
+		for (i = y + height-1; i >= y; i--)
+		{
+			for (j = x; j < width + x; j++)
+			{
+				dst_data[(height-1-i-y)*width+j-x] =
+				(UINT16)(
+				                 ((image[(i*texsize+j)*3]>>3)<<11) |
+				                 ((image[(i*texsize+j)*3+1]>>2)<<5) |
+				                 ((image[(i*texsize+j)*3+2]>>3)));
+			}
+		}
+	}
+	free(image);
+	return true;
+#endif
+}
+#endif
 
 // -----------------+
 // GClipRect        : Defines the 2D hardware clipping window
@@ -636,7 +742,7 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 		{
 //            glColorMask((PolyFlags&PF_Invisible)==0, (PolyFlags&PF_Invisible)==0,
 //                         (PolyFlags&PF_Invisible)==0, (PolyFlags&PF_Invisible)==0);
-			
+
 			if (PolyFlags&PF_Invisible)
 				glBlendFunc(GL_ZERO, GL_ONE);         // transparent blending
 			else
@@ -722,7 +828,7 @@ EXPORT void HWRAPI(SetTexture) (FTextureInfo *pTexInfo)
 							tex[w*j+i] = 0;
 						else
 							tex[w*j+i] = (myPaletteData[*pImgData].s.alpha>>4)<<12;
-						
+
 						tex[w*j+i] |= (myPaletteData[*pImgData].s.red  >>4)<<8;
 						tex[w*j+i] |= (myPaletteData[*pImgData].s.green>>4)<<4;
 						tex[w*j+i] |= (myPaletteData[*pImgData].s.blue >>4);
@@ -1307,4 +1413,166 @@ EXPORT int  HWRAPI(GetTextureUsed) (void)
 EXPORT int  HWRAPI(GetRenderVersion) (void)
 {
 	return VERSION;
+}
+
+// Create a texture from the screen.
+EXPORT void HWRAPI(MakeScreenTexture) (void)
+{
+	INT32 texsize = 2048;
+	boolean firstTime = (screentexture == 0);
+
+	// Use a power of two texture, dammit
+	if(screen_width <= 512)
+		texsize = 512;
+	else if(screen_width <= 1024)
+		texsize = 1024;
+
+	// Create screen texture
+	if (firstTime)
+		screentexture = SCRTEX_SCREENTEXTURE;
+	glBindTexture(GL_TEXTURE_2D, screentexture);
+
+	if (firstTime)
+	{
+#ifdef KOS_GL_COMPATIBILITY
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+#else
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+#endif
+	Clamp2D(GL_TEXTURE_WRAP_S);
+	Clamp2D(GL_TEXTURE_WRAP_T);
+#ifndef KOS_GL_COMPATIBILITY
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
+#endif
+
+	tex_downloaded = screentexture;
+}
+
+EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
+{
+	INT32 texsize = 2048;
+	boolean firstTime = (finalScreenTexture == 0);
+
+	// Use a power of two texture, dammit
+	if(screen_width <= 512)
+		texsize = 512;
+	else if(screen_width <= 1024)
+		texsize = 1024;
+
+	// Create screen texture
+	if (firstTime)
+		finalScreenTexture = SCRTEX_FINALSCREENTEXTURE;
+	glBindTexture(GL_TEXTURE_2D, finalScreenTexture);
+
+	if (firstTime)
+	{
+#ifdef KOS_GL_COMPATIBILITY
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+#else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+#endif
+		Clamp2D(GL_TEXTURE_WRAP_S);
+		Clamp2D(GL_TEXTURE_WRAP_T);
+#ifndef KOS_GL_COMPATIBILITY
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
+#endif
+
+	tex_downloaded = finalScreenTexture;
+
+}
+
+EXPORT void HWRAPI(DrawScreenFinalTexture)(int width, int height)
+{
+	float xfix, yfix;
+	int lmaxx, lmaxy;
+	INT32 texsize = 2048;
+	float origaspect, newaspect;
+	float xoff = 1, yoff = 1; // xoffset and yoffset for the polygon to have black bars around the screen
+	FRGBAFloat clearColour;
+
+	lmaxx = width < screen_width ? screen_width : width;
+	lmaxy = height < screen_height ? screen_height : height;
+
+	if(screen_width <= 1024)
+		texsize = 1024;
+	if(screen_width <= 512)
+		texsize = 512;
+
+	xfix = 1/((float)(texsize)/((float)((screen_width))));
+	yfix = 1/((float)(texsize)/((float)((screen_height))));
+
+	//pglClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	origaspect = (float)screen_width / screen_height;
+	newaspect = (float)width / height;
+	if (origaspect < newaspect)
+	{
+		xoff = origaspect / newaspect;
+		yoff = 1;
+	}
+	else if (origaspect > newaspect)
+	{
+		xoff = 1;
+		yoff = newaspect / origaspect;
+	}
+
+	glViewport(0, 0, width, height);
+
+	clearColour.red = clearColour.green = clearColour.blue = 0;
+	clearColour.alpha = 1;
+	ClearBuffer(true, false, &clearColour);
+
+	glBindTexture(GL_TEXTURE_2D, finalScreenTexture);
+	glBegin(GL_QUADS);
+
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		// Bottom left
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-xoff, -yoff, 1.0f);
+
+		// Top left
+		glTexCoord2f(0.0f, yfix);
+		glVertex3f(-xoff, yoff, 1.0f);
+
+		// Top right
+		glTexCoord2f(xfix, yfix);
+		glVertex3f(xoff, yoff, 1.0f);
+
+		// Bottom right
+		glTexCoord2f(xfix, 0.0f);
+		glVertex3f(xoff, -yoff, 1.0f);
+
+	glEnd();
+
+	SetModelView(screen_width, screen_height);
+	SetStates();
+
+	tex_downloaded = finalScreenTexture; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+}
+
+// Sryder:	This needs to be called whenever the screen changes resolution in order to reset the screen textures to use
+//			a new size
+EXPORT void HWRAPI(FlushScreenTextures) (void)
+{
+	glDeleteTextures(1, &screentexture);
+	glDeleteTextures(1, &startScreenWipe);
+	glDeleteTextures(1, &endScreenWipe);
+	glDeleteTextures(1, &finalScreenTexture);
+	screentexture = 0;
+	startScreenWipe = 0;
+	endScreenWipe = 0;
+	finalScreenTexture = 0;
 }

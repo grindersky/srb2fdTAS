@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
@@ -58,6 +58,8 @@ void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(int transtablenum, FSurfaceInfo *pSurf);
 void HWR_SetPaletteColor(int palcolor);
 int HWR_GetTextureUsed(void);
+void HWR_MakeScreenFinalTexture(void);
+void HWR_DrawScreenFinalTexture(int width, int height);
 
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 

@@ -76,13 +76,14 @@
 
 UINT8 sound_started = false;
 
-static Mix_Music *music;
+static Mix_Music *music[2] = { NULL, NULL };
 static UINT8 music_volume, sfx_volume, internal_volume;
 static float loop_point;
 static float song_length; // length in seconds
 static boolean songpaused;
 static UINT32 music_bytes;
 static boolean is_looping;
+
 
 // fading
 static boolean is_fading;
@@ -141,7 +142,8 @@ void I_StartupSound(void)
 
 	var_cleanup();
 
-	music = NULL;
+	music[0] = NULL;
+	music[1] = NULL;
 	music_volume = sfx_volume = 0;
 
 #if SDL_MIXER_VERSION_ATLEAST(1,2,11)
@@ -392,7 +394,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 					default:
 						errorType = "unknown error";
 				}
-				CONS_Alert(CONS_ERROR,"Encountered %s when running inflate: %s\n", errorType, stream.msg);
+				CONS_Printf("ERROR: Encountered %s when running inflate: %s\n", errorType, stream.msg);
 			}
 			(void)inflateEnd(&stream);
 		}
@@ -416,7 +418,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 				default:
 					errorType = "unknown error";
 			}
-			CONS_Alert(CONS_ERROR,"Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
+			CONS_Printf("ERROR: Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
 		}
 		Z_Free(inflatedData); // GME didn't open jack, but don't let that stop us from freeing this up
 #else
@@ -560,7 +562,7 @@ static void count_music_bytes(int chan, void *stream, int len, void *udata)
 	(void)stream;
 	(void)udata;
 
-	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+	if ((!music[0] || !music[1]) || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
 		return;
 	music_bytes += len;
 }
@@ -569,7 +571,7 @@ static void music_loop(void)
 {
 	if (is_looping)
 	{
-		Mix_PlayMusic(music, 0);
+		Mix_PlayMusic(music[1], 0);
 		Mix_SetMusicPosition(loop_point);
 		music_bytes = (UINT32)(loop_point*44100.0L*4); //assume 44.1khz, 4-byte length (see I_GetSongPosition)
 	}
@@ -658,16 +660,16 @@ musictype_t I_SongType(void)
 		return MU_GME;
 	else
 #endif
-	if (!music)
+	if ((!music[0] || !music[1]))
 		return MU_NONE;
-	else if (Mix_GetMusicType(music) == MUS_MID)
+	else if (Mix_GetMusicType(music[0]) == MUS_MID)
 		return MU_MID;
-	else if (Mix_GetMusicType(music) == MUS_MOD || Mix_GetMusicType(music) == MUS_MODPLUG)
+	else if (Mix_GetMusicType(music[1]) == MUS_MOD || Mix_GetMusicType(music[1]) == MUS_MODPLUG)
 		return MU_MOD;
-	else if (Mix_GetMusicType(music) == MUS_MP3 || Mix_GetMusicType(music) == MUS_MP3_MAD)
+	else if (Mix_GetMusicType(music[1]) == MUS_MP3 || Mix_GetMusicType(music[1]) == MUS_MP3_MAD)
 		return MU_MP3;
 	else
-		return (musictype_t)Mix_GetMusicType(music);
+		return (musictype_t)Mix_GetMusicType(music[1]);
 }
 
 boolean I_SongPlaying(void)
@@ -722,7 +724,7 @@ UINT32 I_GetSongLength(void)
 
 		if (gme_e != NULL)
 		{
-			CONS_Alert(CONS_ERROR, "GME error: %s\n", gme_e);
+			CONS_Printf("ERROR: GME error: %s\n", gme_e);
 			length = 0;
 		}
 		else
@@ -743,14 +745,14 @@ UINT32 I_GetSongLength(void)
 	}
 	else
 #endif
-	if (!music || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+	if ((!music[0] || !music[1]) || I_SongType() == MU_MOD || I_SongType() == MU_MID)
 		return 0;
 	return 0;
 }
 
 boolean I_SetSongLoopPoint(UINT32 looppoint)
 {
-	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID || !is_looping)
+	if (!music[1] || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID || !is_looping)
 		return false;
 	else
 	{
@@ -775,7 +777,7 @@ UINT32 I_GetSongLoopPoint(void)
 
 		if (gme_e != NULL)
 		{
-			CONS_Alert(CONS_ERROR, "GME error: %s\n", gme_e);
+			CONS_Printf("ERROR: GME error: %s\n", gme_e);
 			looppoint = 0;
 		}
 		else
@@ -786,7 +788,7 @@ UINT32 I_GetSongLoopPoint(void)
 	}
 	else
 #endif
-	if (!music || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+	if ((!music[0] || !music[1]) || I_SongType() == MU_MOD || I_SongType() == MU_MID)
 		return 0;
 	else
 		return (UINT32)(loop_point * 1000);
@@ -820,7 +822,7 @@ boolean I_SetSongPosition(UINT32 position)
 	}
 	else
 #endif
-	if (!music || I_SongType() == MU_MID)
+	if ((!music[0] || !music[1]) || I_SongType() == MU_MID)
 		return false;
 	else if (I_SongType() == MU_MOD)
 		return Mix_SetMusicPosition(position); // Goes by channels
@@ -858,7 +860,7 @@ UINT32 I_GetSongPosition(void)
 
 		if (gme_e != NULL)
 		{
-			CONS_Alert(CONS_ERROR, "GME error: %s\n", gme_e);
+			CONS_Printf("ERROR: GME error: %s\n", gme_e);
 			return position;
 		}
 		else
@@ -877,7 +879,7 @@ UINT32 I_GetSongPosition(void)
 	}
 	else
 #endif
-	if (!music || I_SongType() == MU_MID)
+	if ((!music[0] || !music[1]) || I_SongType() == MU_MID)
 		return 0;
 	else
 		return (UINT32)(music_bytes/44100.0L*1000.0L/4); //assume 44.1khz
@@ -890,7 +892,7 @@ UINT32 I_GetSongPosition(void)
 /// Music Playback
 /// ------------------------
 
-boolean I_LoadSong(char *data, size_t len)
+boolean I_LoadSong(char *data, size_t len, size_t selectpos)
 {
 	const char *key1 = "LOOP";
 	const char *key2 = "POINT=";
@@ -902,7 +904,7 @@ boolean I_LoadSong(char *data, size_t len)
 	char *p = data;
 	SDL_RWops *rw;
 
-	if (music
+	if (music[0] || music[1]
 #ifdef HAVE_LIBGME
 		|| gme
 #endif
@@ -925,7 +927,7 @@ boolean I_LoadSong(char *data, size_t len)
 		memset(&stream, 0x00, sizeof (z_stream)); // Init zlib stream
 		// Begin the inflation process
 		inflatedLen = *(UINT32 *)(data + (len-4)); // Last 4 bytes are the decompressed size, typically
-		inflatedData = (UINT8 *)Z_Calloc(inflatedLen, PU_MUSIC, NULL); // Make room for the decompressed data
+		inflatedData = (UINT8 *)Z_Malloc(inflatedLen, PU_MUSIC, NULL); // Make room for the decompressed data
 		stream.total_in = stream.avail_in = len;
 		stream.total_out = stream.avail_out = inflatedLen;
 		stream.next_in = (UINT8 *)data;
@@ -968,7 +970,7 @@ boolean I_LoadSong(char *data, size_t len)
 					default:
 						errorType = "unknown error";
 				}
-				CONS_Alert(CONS_ERROR,"Encountered %s when running inflate: %s\n", errorType, stream.msg);
+				CONS_Printf("ERROR: Encountered %s when running inflate: %s\n", errorType, stream.msg);
 			}
 			(void)inflateEnd(&stream);
 		}
@@ -992,7 +994,7 @@ boolean I_LoadSong(char *data, size_t len)
 				default:
 					errorType = "unknown error";
 			}
-			CONS_Alert(CONS_ERROR,"Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
+			CONS_Printf("ERROR: Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
 		}
 		Z_Free(inflatedData); // GME didn't open jack, but don't let that stop us from freeing this up
 #else
@@ -1008,12 +1010,12 @@ boolean I_LoadSong(char *data, size_t len)
 	}
 #endif
 
-	rw = SDL_RWFromMem(data, len);
+	rw = SDL_RWFromConstMem(data, len);
 	if (rw != NULL)
 	{
-		music = Mix_LoadMUS_RW(rw, 1);
+		music[selectpos] = Mix_LoadMUS_RW(rw, 1);
 	}
-	if (!music)
+	if (!music[selectpos] )
 	{
 		CONS_Printf("ERROR: Mix_LoadMUS_RW: %s\n", Mix_GetError());
 		return false;
@@ -1064,14 +1066,19 @@ void I_UnloadSong(void)
 		gme = NULL;
 	}
 #endif
-	if (music)
+	if (music[0])
 	{
-		Mix_FreeMusic(music);
-		music = NULL;
+		Mix_FreeMusic(music[0]);
+		music[0] = NULL;
+	}
+	if (music[1])
+	{
+		Mix_FreeMusic(music[1]);
+		music[1] = NULL;
 	}
 }
 
-boolean I_PlaySong(boolean looping)
+boolean I_PlaySong(boolean looping, int pos)
 {
 #ifdef HAVE_LIBGME
 	if (gme)
@@ -1083,15 +1090,15 @@ boolean I_PlaySong(boolean looping)
 	}
 	else
 #endif
-	if (!music)
+	if (!music[pos])
 		return false;
 
-	if (I_SongType() != MU_MOD && I_SongType() != MU_MID && Mix_PlayMusic(music, 0) == -1)
+	if (I_SongType() != MU_MOD && I_SongType() != MU_MID && Mix_PlayMusic(music[pos], 0) == -1)
 	{
 		CONS_Printf("Mix_PlayMusic: %s\n", Mix_GetError());
 		return false;
 	}
-	else if ((I_SongType() == MU_MOD || I_SongType() == MU_MID) && Mix_PlayMusic(music, looping ? -1 : 0) == -1) // if MOD, loop forever
+	else if ((I_SongType() == MU_MOD || I_SongType() == MU_MID) && Mix_PlayMusic(music[pos], looping ? -1 : 0) == -1) // if MOD, loop forever
 	{
 		CONS_Printf("Mix_PlayMusic: %s\n", Mix_GetError());
 		return false;
@@ -1121,7 +1128,13 @@ void I_StopSong(void)
 		current_track = -1;
 	}
 #endif
-	if (music)
+	if (music[0])
+	{
+		Mix_UnregisterEffect(MIX_CHANNEL_POST, count_music_bytes);
+		Mix_HookMusicFinished(NULL);
+		Mix_HaltMusic();
+	}
+	if (music[1])
 	{
 		Mix_UnregisterEffect(MIX_CHANNEL_POST, count_music_bytes);
 		Mix_HookMusicFinished(NULL);
@@ -1163,7 +1176,7 @@ void I_ResumeSong(void)
 		while(Mix_UnregisterEffect(MIX_CHANNEL_POST, count_music_bytes) != 0) { }
 			// HACK: fixes issue of multiple effect callbacks being registered
 
-		if(music && I_SongType() != MU_MOD && I_SongType() != MU_MID && !Mix_RegisterEffect(MIX_CHANNEL_POST, count_music_bytes, NULL, NULL))
+		if ((music[0] || music[1]) && I_SongType() != MU_MOD && I_SongType() != MU_MID && !Mix_RegisterEffect(MIX_CHANNEL_POST, count_music_bytes, NULL, NULL))
 			CONS_Printf("ERROR: Error registering SDL music position counter: %s\n", Mix_GetError());
 	}
 
@@ -1204,7 +1217,7 @@ boolean I_SetSongTrack(int track)
 			gme_err_t gme_e = gme_start_track(gme, track);
 			if (gme_e != NULL)
 			{
-				CONS_Alert(CONS_ERROR, "GME error: %s\n", gme_e);
+				CONS_Printf("ERROR: GME error: %s\n", gme_e);
 				return false;
 			}
 			current_track = track;
@@ -1293,33 +1306,27 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 	return is_fading;
 }
 
-boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
-{
-	return I_FadeSongFromVolume(target_volume, internal_volume, ms, callback);
-}
-
-boolean I_FadeOutStopSong(UINT32 ms)
-{
-	return I_FadeSongFromVolume(0, internal_volume, ms, &I_StopSong);
-}
-
-boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
-{
-	if (I_PlaySong(looping))
-		return I_FadeSongFromVolume(100, 0, ms, NULL);
-	else
-		return false;
-}
-
 int I_RegisterSong(void *data, int len)
 {
-	return I_LoadSong(data, len);
+	I_LoadSong(data, len, 0);
+	return I_PlaySong(-1, 0);
 }
 
 boolean I_StartDigSong(const char *musicname, int looping)
 {
-	(void)musicname;
-	return I_PlaySong(looping);
+	int lumpnum;
+	char *data;
+	size_t len;
+
+	if (W_CheckNumForName(va("o_%s", musicname)) == -1)
+			return false;
+
+	lumpnum = W_GetNumForName(va("o_%s", musicname));
+	data = W_CacheLumpNum(lumpnum, PU_MUSIC);
+	len = W_LumpLength(lumpnum);
+	I_LoadSong(data, len, 1);
+
+	return I_PlaySong(looping, 1);
 }
 
 void I_UnRegisterSong(int handle)

@@ -1584,7 +1584,7 @@ static void I_ShutdownMouse2(void)
 	event_t event;
 	INT32 i;
 
-	if (mouse2filehandle != (HANDLE)(-1))
+	if (mouse2filehandle == (HANDLE)(-1))
 		return;
 
 	SetCommMask(mouse2filehandle, 0);
@@ -1674,7 +1674,7 @@ void I_GetMouseEvents(void)
 	static UINT8 lastbuttons2 = 0; //mouse movement
 	event_t event;
 
-	if (mouse2filehandle != (HANDLE)(-1))
+	if (mouse2filehandle == (HANDLE)(-1))
 		return;
 
 	I_PoolMouse2();
@@ -1782,7 +1782,7 @@ void I_StartupMouse2(void)
 	if (cv_usemouse2.value == 0)
 		return;
 
-	if (mouse2filehandle != (HANDLE)(-1))
+	if (mouse2filehandle == (HANDLE)(-1))
 	{
 		// COM file handle
 		mouse2filehandle = CreateFileA(cv_mouse2port.string, GENERIC_READ | GENERIC_WRITE,
@@ -1791,7 +1791,7 @@ void I_StartupMouse2(void)
 									   OPEN_EXISTING,
 									   FILE_ATTRIBUTE_NORMAL,
 									   NULL);
-		if (mouse2filehandle != (HANDLE)(-1))
+		if (mouse2filehandle == (HANDLE)(-1))
 		{
 			INT32 e = GetLastError();
 			if (e == 5)

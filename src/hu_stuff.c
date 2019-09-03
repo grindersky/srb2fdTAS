@@ -642,7 +642,6 @@ void HU_clearChatChars(void)
 //
 boolean HU_Responder(event_t *ev)
 {
-	shiftdown = false, altdown = false;
 	boolean eatkey = false;
 	unsigned char c;
 
