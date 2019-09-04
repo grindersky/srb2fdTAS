@@ -86,6 +86,8 @@
 
 include makefile.cfg
 
+PKG_CONFIG?=pkg-config
+
 ifdef DUMMY
 NOPNG=1
 NOMNG=1
@@ -111,6 +113,7 @@ endif #ifdef MINGW
 
 ifdef LINUX
 UNIXLIKE=1
+HAVE_LIBGME=1
 endif
 
 ifdef SOLARIS
