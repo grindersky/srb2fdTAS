@@ -2783,45 +2783,16 @@ void I_RegisterSysCommands(void) {}
 
 UINT64 I_FileSize(const char *filename)
 {
-#define SDLIO
-#ifdef _PSP_
-	SceIoStat fs;
-	fs.st_attr = (unsigned int)-1;
-	sceIoGetstat(filename, &fs);
-	return fs.st_attr;
-#else
-#if defined (SDLIO) && !defined (_arch_dreamcast)
-	SDL_RWops *handle;
-#else
-	int handle;
-#ifndef _arch_dreamcast
-	struct stat bufstat;
-#endif
-#endif
 	UINT64 filesize;
+	SDL_RWops *handle;
 
-#if defined (SDLIO) && !defined (_arch_dreamcast)
 	if (NULL != (handle = SDL_RWFromFile(filename, "rb")))
-#else
-	if ((handle = open(filename, O_RDONLY|O_BINARY, 0666)) != -1)
-#endif
 	{
-#if defined (SDLIO) && !defined (_arch_dreamcast)
 		SDL_RWseek(handle, 0, SEEK_END);
 		filesize = SDL_RWtell(handle);
 		SDL_RWclose(handle);
-#else
-#ifdef _arch_dreamcast
-		filesize = fs_total(handle);
-#else
-		fstat(handle, &bufstat);
-		filesize = bufstat.st_size;
-#endif
-		close(handle);
-#endif
 		return filesize;
 	}
-#endif
-	return (UINT64)-1;
+	return 0;
 }
 #endif
