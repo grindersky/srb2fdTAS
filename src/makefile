@@ -124,10 +124,10 @@ endif
 ifdef SDL
 #SDL 2.0
 ifndef SDL12
-	include sdl/Makefile.cfg
+	include sdl/makefile.cfg
 #SDL 1.2
 else
-	include sdl12/Makefile.cfg
+	include sdl12/makefile.cfg
 endif #ifndef SDL12
 endif #ifdef SDL
 

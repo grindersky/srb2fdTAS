@@ -35,14 +35,69 @@ typedef unsigned short USHORT;
 #endif
 #endif // _OS2EMX_H
 
-#if defined (__GNUC__) || defined (__MWERKS__) || defined (__SUNPRO_C) || defined (__DECC)
-#define INT64  long long
-#define UINT64 unsigned long long
-#elif defined (_MSC_VER)
+/* 7.18.1.1  Exact-width integer types */
+#ifdef _MSC_VER
+#define UINT8 unsigned __int8
+#define SINT8 signed __int8
+
+#define UINT16 unsigned __int16
+#define INT16 __int16
+
+#define INT32 __int32
+#define UINT32 unsigned __int32
+
 #define INT64  __int64
 #define UINT64 unsigned __int64
+
+typedef long ssize_t;
+
+/* Older Visual C++ headers don't have the Win64-compatible typedefs... */
+#if (_MSC_VER <= 1200)
+	#ifndef DWORD_PTR
+		#define DWORD_PTR DWORD
+	#endif
+	#ifndef PDWORD_PTR
+		#define PDWORD_PTR PDWORD
+	#endif
+#endif
+#elif defined (_arch_dreamcast) // KOS Dreamcast
+#include <arch/types.h>
+
+#define UINT8 unsigned char
+#define SINT8 signed char
+
+#define UINT16 uint16
+#define INT16 int16
+
+#define INT32 int
+#define UINT32 unsigned int
+#define INT64  int64
+#define UINT64 uint64
+#elif defined (__DJGPP__)
+#define UINT8 unsigned char
+#define SINT8 signed char
+
+#define UINT16 unsigned short int
+#define INT16 signed short int
+
+#define INT32 signed long
+#define UINT32 unsigned long
+#define INT64  signed long long
+#define UINT64 unsigned long long
 #else
-"Warning, need 64 bit type for this compiler"
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
+#define UINT8 uint8_t
+#define SINT8 int8_t
+
+#define UINT16 uint16_t
+#define INT16 int16_t
+
+#define INT32 int32_t
+#define UINT32 uint32_t
+#define INT64  int64_t
+#define UINT64 uint64_t
 #endif
 
 #ifdef __APPLE_CC__

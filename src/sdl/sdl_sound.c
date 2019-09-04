@@ -142,7 +142,7 @@ static SDL_bool musicStarted = SDL_FALSE;
 static SDL_mutex *Msc_Mutex = NULL;
 /* FIXME: Make this file instance-specific */
 #define MIDI_PATH     srb2home
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXLIKE)
 #define MIDI_PATH2    "/tmp"
 #endif
 #define MIDI_TMPFILE  "srb2music"

@@ -26,7 +26,7 @@
 #include "i_ttf.h"
 
 // Search directories to find aforementioned TTF file.
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXLIKE)
 #define FONTSEARCHPATH1 "/usr/share/fonts"
 #define FONTSEARCHPATH2 "/usr/local/share/fonts"
 #define FONTSEARCHPATH3 "/usr/games/SRB2"

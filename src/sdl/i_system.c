@@ -44,7 +44,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #elif defined (_MSC_VER)
 #include <direct.h>
 #endif
-#if defined (__unix__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined (UNIXLIKE)
 #include <fcntl.h>
 #endif
 
@@ -77,7 +77,7 @@ void Command_SDLVer_f(void);
 #include "SDL_cpuinfo.h"
 #define HAVE_SDLCPUINFO
 
-#if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#if defined (__unix__) || defined(__APPLE__) || (defined (UNIXLIKE) && !defined (__HAIKU__))
 #if defined (__linux__)
 #include <sys/vfs.h>
 #else
@@ -93,7 +93,7 @@ void Command_SDLVer_f(void);
 #endif
 #endif
 
-#if defined (__linux__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#if defined (__linux__) || (defined (UNIXLIKE) && !defined (__HAIKU__))
 #ifndef NOTERMIOS
 #include <termios.h>
 #include <sys/ioctl.h> // ioctl
@@ -131,7 +131,7 @@ void Command_SDLVer_f(void);
 #endif
 
 // Locations for searching the srb2.srb
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXLIKE)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2"
 #define DEFAULTWADLOCATION3 "/usr/share/games/SRB2"
@@ -1727,7 +1727,7 @@ void I_StartupMouse2(void)
 	if (cv_usemouse2.value == 0) return;
 	if ((fdmouse2 = open(cv_mouse2port.string, O_RDONLY|O_NONBLOCK|O_NOCTTY)) == -1)
 	{
-		CONS_Printf(M_GetText("Error opening %s!\n"), cv_mouse2port.string);
+		CONS_Printf("Error opening %s!\n", cv_mouse2port.string);
 		return;
 	}
 	tcflush(fdmouse2, TCIOFLUSH);
@@ -1750,7 +1750,7 @@ void I_StartupMouse2(void)
 		if (toupper(cv_mouse2opt.string[i]) == 'R')
 		{
 			if (cv_mouse2opt.string[i+1] == '-')
-	`			rts = 0;
+				rts = 0;
 			else
 				rts = 1;
 		}
@@ -2238,7 +2238,7 @@ void I_ShutdownSystem(void)
 
 void I_GetDiskFreeSpace(INT64 *freespace)
 {
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXLIKE)
 #if defined (SOLARIS) || defined (__HAIKU__)
 	*freespace = INT32_MAX;
 	return;
@@ -2319,7 +2319,7 @@ char *I_GetUserName(void)
 INT32 I_mkdir(const char *dirname, INT32 unixright)
 {
 //[segabor]
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__) || defined (__OS2__)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXLIKE) || defined (__CYGWIN__) || defined (__OS2__)
 	return mkdir(dirname, unixright);
 #elif defined (_WIN32)
 	UNREFERENCED_PARAMETER(unixright); /// \todo should implement ntright under nt...
