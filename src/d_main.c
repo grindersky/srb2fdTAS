@@ -133,8 +133,7 @@ char srb2path[256] = ".";
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 
-boolean shiftdown = false;
-boolean altdown = false;
+UINT8 shiftdown, ctrldown, altdown = 0;
 
 //
 // EVENT HANDLING
