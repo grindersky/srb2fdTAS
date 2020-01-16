@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -38,6 +38,7 @@
 #include "console.h"
 #include "m_random.h"
 #include "y_inter.h"
+#include "m_misc.h"
 
 credit_t credits[19];
 
@@ -2669,6 +2670,10 @@ void F_IntroDrawer(void)
 					I_UpdateNoBlit();
 					M_Drawer(); // menu is drawn even on top of wipes
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
+
+					if (moviemode) // make sure we save frames for the white hold too
+						M_SaveFrame();
+
 				}
 			}
 

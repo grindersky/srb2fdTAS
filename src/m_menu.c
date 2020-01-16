@@ -79,6 +79,7 @@
 #include "st_stuff.h"
 
 #include "i_sound.h"
+#include "m_anigif.h"
 
 // -1 = no quicksave slot picked!
 static int quickSaveSlot = -1;
@@ -167,6 +168,8 @@ static void M_MatchOptions(int choice);
 static void M_RaceOptions(int choice);
 static void M_TagOptions(int choice);
 static void M_CTFOptions(int choice);
+static void M_ScreenshotOptions(INT32 choice);
+static void M_EraseData(int choice);
 #ifdef CHAOSISNOTDEADYET
 static void M_ChaosOptions(int choice);
 #endif
@@ -177,7 +180,7 @@ static void M_OpenGLOption(int choice);
 
 extern menu_t MainDef, SinglePlayerDef, MultiPlayerDef, SetupMultiPlayerDef;
 extern menu_t NewDef, OptionsDef, VidModeDef, ControlDef, SoundDef;
-extern menu_t ReadDef2, ReadDef1, SaveDef, LoadDef, ControlDef2, GameOptionDef;
+extern menu_t ReadDef2, ReadDef1, SaveDef, LoadDef, ControlDef2, GameOptionDef, EraseDataDef;
 extern menu_t NetOptionDef, EnemyToggleDef, MonitorToggleDef, SecretsDef, CustomSecretsDef;
 extern menu_t VideoOptionsDef, MouseOptionsDef, ServerOptionsDef;
 extern menu_t RewardDef, LevelSelectDef, JoystickDef, TimeAttackDef;
@@ -299,6 +302,13 @@ void M_DrawGenericMenu(void)
 					V_DrawMappedPatch(x, y, 0,
 						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
 				y += LINEHEIGHT;
+				break;
+			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text
+				if (currentMenu->menuitems[i].alphaKey)
+					y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
+
+				V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT;
 				break;
 		}
 	}
@@ -3750,8 +3760,6 @@ static void M_ChooseSkill(int choice)
 	M_SetupChoosePlayer(0);
 }
 
-static void M_EraseData(int choice);
-
 // Tails 08-11-2002
 //===========================================================================
 //                        Data OPTIONS MENU
@@ -3759,8 +3767,9 @@ static void M_EraseData(int choice);
 
 static menuitem_t DataOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Erase Time Attack Data", M_EraseData, 0},
-	{IT_STRING | IT_CALL, NULL, "Erase Secrets Data", M_EraseData, 0},
+	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 10},
+
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",  &EraseDataDef,    30},
 };
 
 menu_t DataOptionsDef =
@@ -3775,6 +3784,121 @@ menu_t DataOptionsDef =
 	0,
 	NULL
 };
+
+static menuitem_t ScreenshotOptionsMenu[] =
+{
+	{IT_HEADER, NULL, "General", NULL, 0},
+	{IT_STRING|IT_CVAR, NULL, "Use color profile", &cv_screenshot_colorprofile,     6},
+
+	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 16},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          22},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 27},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                42},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 47},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              52},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           57},
+
+	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 64},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              70},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder, 	  75},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 90},
+
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              95},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             100},
+
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              95},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               100},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            105},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         110},
+};
+
+enum
+{
+	op_screenshot_colorprofile = 1,
+	op_screenshot_folder = 4,
+	op_movie_folder = 11,
+	op_screenshot_capture = 12,
+	op_screenshot_gif_start = 13,
+	op_screenshot_gif_end = 14,
+	op_screenshot_apng_start = 15,
+	op_screenshot_apng_end = 18,
+};
+
+static menuitem_t EraseDataMenu[] =
+{
+	{IT_STRING | IT_CALL, NULL, "Erase Time Attack Data", M_EraseData, 10},
+	{IT_STRING | IT_CALL, NULL, "Erase Secrets Data", M_EraseData, 20},
+};
+
+menu_t EraseDataDef =
+{
+	"M_DATA",
+	"OPTIONS",
+	sizeof (DataOptionsMenu)/sizeof (menuitem_t),
+	&DataOptionsDef,
+	EraseDataMenu,
+	M_DrawGenericMenu,
+	60, 40,
+	0,
+	NULL
+};
+
+menu_t ScreenshotOptionsDef =
+{
+	"M_DATA",
+	"OPTIONS",
+	sizeof (ScreenshotOptionsMenu)/sizeof (menuitem_t),
+	&DataOptionsDef,
+	ScreenshotOptionsMenu,
+	M_DrawGenericMenu,
+	30, 30,
+	0,
+	NULL
+};
+
+static void M_ScreenshotOptions(INT32 choice)
+{
+	(void)choice;
+	Screenshot_option_Onchange();
+	Moviemode_mode_Onchange();
+
+	M_SetupNextMenu(&ScreenshotOptionsDef);
+}
+
+void Screenshot_option_Onchange(void)
+{
+	ScreenshotOptionsMenu[op_screenshot_folder].status =
+		(cv_screenshot_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+}
+
+void Moviemode_mode_Onchange(void)
+{
+	INT32 i, cstart, cend;
+	for (i = op_screenshot_gif_start; i <= op_screenshot_apng_end; ++i)
+		ScreenshotOptionsMenu[i].status = IT_DISABLED;
+
+	switch (cv_moviemode.value)
+	{
+		case MM_GIF:
+			cstart = op_screenshot_gif_start;
+			cend = op_screenshot_gif_end;
+			break;
+		case MM_APNG:
+			cstart = op_screenshot_apng_start;
+			cend = op_screenshot_apng_end;
+			break;
+		default:
+			return;
+	}
+	for (i = cstart; i <= cend; ++i)
+		ScreenshotOptionsMenu[i].status = IT_STRING|IT_CVAR;
+}
+
+void Moviemode_option_Onchange(void)
+{
+	ScreenshotOptionsMenu[op_movie_folder].status =
+		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+}
 
 static void M_TimeDataResponse(int ch)
 {
@@ -7281,20 +7405,16 @@ boolean M_Responder(event_t *ev)
 				M_OptionsMenu(0);
 				return true;
 
-			case KEY_F8: // Toggle messages
-				CV_AddValue(&cv_showmessages, 1);
-				return true;
-
-			case KEY_F9: // Quickload
-				M_QuickLoad();
-				return true;
-
 			case KEY_F10: // Quit SRB2
 				M_QuitSRB2(0);
 				return true;
 
 			case KEY_F11: // Gamma Level
 				CV_AddValue(&cv_usegamma, 1);
+				return true;
+
+			case KEY_F12: // Quickload
+				M_QuickLoad();
 				return true;
 
 			case KEY_ESCAPE: // Pop up menu

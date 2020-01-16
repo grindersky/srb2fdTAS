@@ -173,6 +173,10 @@ void D_ProcessEvents(void)
 	{
 		ev = &events[eventtail];
 
+		// Screenshots over everything so that they can be taken anywhere.
+		if (M_ScreenshotResponder(ev))
+			continue; // ate the event
+
 		// Menu input
 		if (M_Responder(ev))
 			continue; // menu ate the event
@@ -620,13 +624,9 @@ void D_SRB2Loop(void)
 			supdate = false;
 
 			if (moviemode)
-			{
-#ifdef HAVE_MNG
-				M_SaveMNG();
-#else
-				COM_BufAddText("screenshot");
-#endif
-			}
+				M_SaveFrame();
+			if (takescreenshot) // Only take screenshots after drawing.
+				M_DoScreenShot();
 		}
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
@@ -639,6 +639,11 @@ void D_SRB2Loop(void)
 					P_MoveChaseCamera(&players[displayplayer], &camera, true);
 			}
 			D_Display();
+
+			if (moviemode)
+				M_SaveFrame();
+			if (takescreenshot) // Only take screenshots after drawing.
+				M_DoScreenShot();
 		}
 
 		// consoleplayer -> displayplayer (hear sounds from viewpoint)

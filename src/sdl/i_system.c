@@ -2641,7 +2641,7 @@ static long get_entry(const char* name, const char* buf)
 #endif
 
 // quick fix for compil
-ULONG I_GetFreeMem(ULONG *total)
+UINT32 I_GetFreeMem(UINT32 *total)
 {
 #ifdef FREEBSD
 	struct vmmeter sum;

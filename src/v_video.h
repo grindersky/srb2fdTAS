@@ -36,8 +36,16 @@ extern byte *screens[5];
 extern const byte gammatable[5][256];
 extern consvar_t cv_ticrate, cv_usegamma;
 
+#define COLORBITS 6
+#define SHIFTCOLORBITS (8-COLORBITS)
+#define CLUTSIZE (1<<COLORBITS)
+
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
+
+extern UINT8 colorlookup[CLUTSIZE][CLUTSIZE][CLUTSIZE];
+
+void InitColorLUT(RGBA_t *palette);
 
 // Set the current RGB palette lookup to use for palettized graphics
 void V_SetPalette(int palettenum);
@@ -45,6 +53,7 @@ void V_SetPalette(int palettenum);
 void V_SetPaletteLump(const char *pal);
 
 extern RGBA_t *pLocalPalette;
+extern RGBA_t *pMasterPalette;
 
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])

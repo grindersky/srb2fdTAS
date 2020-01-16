@@ -207,6 +207,19 @@ void CONS_Printf(const char *fmt, ...) FUNCPRINTF;
 #include "m_swap.h"
 
 // m_misc.h
+#ifdef GETTEXT
+#define M_GetText(String) gettext(String)
+void M_StartupLocale(void);
+#else
+// If no translations are to be used, make a stub
+// M_GetText function that just returns the string.
+#define M_GetText(x) (x)
+#endif
+char *sizeu1(size_t num);
+char *sizeu2(size_t num);
+char *sizeu3(size_t num);
+char *sizeu4(size_t num);
+char *sizeu5(size_t num);
 char *va(const char *format, ...) FUNCPRINTF;
 
 // d_main.c

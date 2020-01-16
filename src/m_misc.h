@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Commonly used routines
-//	
+//
 ///	Default Config File.
 ///	PCX Screenshots.
 ///	File i/o
@@ -26,8 +26,27 @@
 
 #include "doomtype.h"
 #include "w_wad.h"
+#include "d_event.h"
 
-extern boolean moviemode;
+typedef enum {
+	MM_OFF = 0,
+	MM_APNG,
+	MM_GIF,
+	MM_SCREENSHOT,
+	MM_MNG
+} moviemode_t;
+extern moviemode_t moviemode;
+
+extern consvar_t cv_screenshot_option, cv_screenshot_folder, cv_screenshot_colorprofile;
+extern consvar_t cv_moviemode, cv_movie_folder, cv_movie_option;
+extern consvar_t cv_zlib_memory, cv_zlib_level, cv_zlib_strategy, cv_zlib_window_bits;
+extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_window_bitsa;
+extern consvar_t cv_apng_delay;
+
+void M_StartMovie(void);
+void M_SaveFrame(void);
+void M_StopMovie(void);
+
 
 // the file where game vars and settings are saved
 #ifdef DC
@@ -52,16 +71,19 @@ void FIL_DefaultExtension (char *path, const char *extension);
 void FIL_ForceExtension(char *path, const char *extension);
 boolean FIL_CheckExtension(const char *in);
 
+extern boolean takescreenshot;
+void M_ScreenShot(void);
+void M_DoScreenShot(void);
+boolean M_ScreenshotResponder(event_t *ev);
+
 #ifdef HAVE_PNG
-boolean M_SavePNG(const char *filename, void *data, int width, int height, byte *palette);
+boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette);
 #endif
 #ifdef HAVE_MNG
 boolean M_OpenMNG(void);
 void M_SaveMNG(void);
 boolean M_CloseMNG(void);
 #endif
-
-void M_ScreenShot(void);
 
 extern char configfile[MAX_WADPATH];
 

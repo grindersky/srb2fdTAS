@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -22,7 +22,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Status bar code
-/// 
+///
 ///	Does the face/direction indicator animatin.
 ///	Does palette indicators as well (red pain/berserk, bright pickup)
 
@@ -122,7 +122,7 @@ static patch_t *minicaps;
 static boolean facefreed[MAXPLAYERS];
 static boolean prefixfreed[MAXPLAYERS];
 
-hudinfo_t hudinfo[NUMHUDITEMS] = 
+hudinfo_t hudinfo[NUMHUDITEMS] =
 {
 	{	52,		192	},			// HUD_LIVESNAME
 	{   16,		192	},			// HUD_LIVESPIC
@@ -188,7 +188,7 @@ void ST_Ticker(void)
 		return;
 }
 
-static int st_palette = 0;
+int st_palette = 0;
 
 void ST_doPaletteStuff(void)
 {

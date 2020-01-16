@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -26,6 +26,8 @@
 #ifdef __GNUG__
 #pragma interface
 #endif
+
+UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 
 // moved here for r_sky.c (texture_t is used)
 

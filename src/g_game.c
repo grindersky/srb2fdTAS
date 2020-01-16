@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -1245,7 +1245,7 @@ boolean G_Responder(event_t *ev)
 				if (displayplayer != consoleplayer && (!playeringame[displayplayer]
 					|| (cv_splitscreen.value && displayplayer == secondarydisplayplayer)))
 					continue;
-				
+
 				if (gametype == GT_CTF && players[consoleplayer].ctfteam
 					&& players[displayplayer].ctfteam != players[consoleplayer].ctfteam)
 					continue;
@@ -1704,7 +1704,7 @@ void G_PlayerReborn(int player)
 
 		S_ChangeMusic(mapmusic & 2047, true);
 	}
-	
+
 	if (gametype == GT_COOP)
 		P_FindEmerald(); // scan for emeralds to hunt for
 
@@ -1969,7 +1969,7 @@ void G_DoReborn(int playernum)
 			P_SetMobjState(player->mo, S_DISS);
 		}
 		// spawn at random spot if in death match
-		if (gametype == GT_MATCH || gametype == GT_TAG 
+		if (gametype == GT_MATCH || gametype == GT_TAG
 #ifdef CHAOSISNOTDEADYET
 			|| gametype == GT_CHAOS
 #endif
@@ -2289,7 +2289,7 @@ void G_LoadGameData(void)
 	foundeggs = (READLONG(save_p)-30)/5;
 	totalplaytime = READULONG(save_p);
 	grade = (READLONG(save_p)-75)/4;
-	
+
 	for (i = 0; i < NUMMAPS; i++)
 		mapvisited[i] = READBYTE(save_p);
 
@@ -2529,16 +2529,16 @@ void G_DoSaveGame(unsigned int savegameslot, const char *savedescription)
 			CONS_Printf("No more free memory for savegame\n");
 			return;
 		}
-	
+
 		strcpy(descriptionstr, savedescription);
 		descriptionstr[SAVESTRINGSIZE] = 0;
 		WRITEMEM(save_p, descriptionstr, SAVESTRINGSIZE);
 		memset(name, 0, sizeof (name));
 		sprintf(name, "version %d", VERSION);
 		WRITEMEM(save_p, name, VERSIONSIZE);
-	
+
 		P_SaveGame();
-	
+
 		length = save_p - savebuffer;
 		if (length > SAVEGAMESIZE)
 			I_Error("Savegame buffer overrun");
@@ -2915,28 +2915,6 @@ void G_TimeDemo(const char *name)
 	framecount = 0;
 	demostarttime = I_GetTime();
 	G_DeferedPlayDemo(name);
-}
-
-void G_MovieMode(boolean enable)
-{
-	if (enable)
-	{
-		CONS_Printf("Movie mode enabled.\n");
-		singletics = true;
-		moviemode = true;
-#ifdef HAVE_MNG
-		M_OpenMNG();
-#endif
-	}
-	else
-	{
-		CONS_Printf("Movie mode disabled.\n");
-		singletics = false;
-		moviemode = false;
-#ifdef HAVE_MNG
-		M_CloseMNG();
-#endif
-	}
 }
 
 void G_DoneLevelLoad(void)

@@ -36,6 +36,7 @@
 #include "p_setup.h"
 #include "s_sound.h"
 #include "m_misc.h"
+#include "m_anigif.h"
 #include "am_map.h"
 #include "byteptr.h"
 #include "d_netfil.h"
@@ -684,6 +685,27 @@ void D_RegisterClientCommands(void)
 
 	// p_fab.c
 	CV_RegisterVar(&cv_translucency);
+
+	CV_RegisterVar(&cv_screenshot_option);
+	CV_RegisterVar(&cv_screenshot_folder);
+	CV_RegisterVar(&cv_screenshot_colorprofile);
+	CV_RegisterVar(&cv_moviemode);
+	CV_RegisterVar(&cv_movie_option);
+	CV_RegisterVar(&cv_movie_folder);
+	// PNG variables
+	CV_RegisterVar(&cv_zlib_level);
+	CV_RegisterVar(&cv_zlib_memory);
+	CV_RegisterVar(&cv_zlib_strategy);
+	CV_RegisterVar(&cv_zlib_window_bits);
+	// APNG variables
+	CV_RegisterVar(&cv_zlib_levela);
+	CV_RegisterVar(&cv_zlib_memorya);
+	CV_RegisterVar(&cv_zlib_strategya);
+	CV_RegisterVar(&cv_zlib_window_bitsa);
+	CV_RegisterVar(&cv_apng_delay);
+	// GIF variables
+	CV_RegisterVar(&cv_gif_optimize);
+	CV_RegisterVar(&cv_gif_downscale);
 
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
@@ -1531,12 +1553,12 @@ static void Command_Stopdemo_f(void)
 
 static void Command_StartMovie_f(void)
 {
-	G_MovieMode(true);
+	M_StartMovie();
 }
 
 static void Command_StopMovie_f(void)
 {
-	G_MovieMode(false);
+	M_StopMovie();
 }
 
 int mapchangepending = 0;

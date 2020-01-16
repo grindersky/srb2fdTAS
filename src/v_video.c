@@ -155,28 +155,29 @@ const byte gammatable[5][256] =
 
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;
+RGBA_t *pMasterPalette = NULL;
 
 // keep a copy of the palette so that we can get the RGB value for a color index at any time.
 static void LoadPalette(const char *lumpname)
 {
-	int i, palsize;
+	lumpnum_t lumpnum = W_GetNumForName(lumpname);
+	size_t i, palsize = W_LumpLength(lumpnum)/3;
 	const byte *usegamma = gammatable[cv_usegamma.value];
-	byte *pal;
+	UINT8 *pal;
 
-	i = W_GetNumForName(lumpname);
-	palsize = W_LumpLength(i)/3;
-	if (pLocalPalette)
-		Z_Free(pLocalPalette);
+	Z_Free(pLocalPalette);
+	Z_Free(pMasterPalette);
 
-	pLocalPalette = Z_Malloc(sizeof (RGBA_t)*palsize, PU_STATIC, NULL);
+	pLocalPalette = Z_Malloc(sizeof (*pLocalPalette)*palsize, PU_STATIC, NULL);
+	pMasterPalette = Z_Malloc(sizeof (*pMasterPalette)*palsize, PU_STATIC, NULL);
 
-	pal = W_CacheLumpNum(i, PU_CACHE);
+	pal = W_CacheLumpNum(lumpnum, PU_CACHE);
 	for (i = 0; i < palsize; i++)
 	{
-		pLocalPalette[i].s.red = usegamma[*pal++];
-		pLocalPalette[i].s.green = usegamma[*pal++];
-		pLocalPalette[i].s.blue = usegamma[*pal++];
-		pLocalPalette[i].s.alpha = 0xff;
+		pMasterPalette[i].s.red = pLocalPalette[i].s.red = usegamma[*pal++];
+		pMasterPalette[i].s.green = pLocalPalette[i].s.green = usegamma[*pal++];
+		pMasterPalette[i].s.blue = pLocalPalette[i].s.blue = usegamma[*pal++];
+		pMasterPalette[i].s.alpha = pLocalPalette[i].s.alpha = 0xff;
 	}
 }
 
@@ -1696,6 +1697,29 @@ int V_StringWidth(const char *string)
 	}
 
 	return w;
+}
+
+// Taken from my videos-in-SRB2 project
+// Generates a color look-up table
+// which has up to 64 colors at each channel
+// (see the defines in v_video.h)
+
+UINT8 colorlookup[CLUTSIZE][CLUTSIZE][CLUTSIZE];
+
+void InitColorLUT(RGBA_t *palette)
+{
+	UINT8 r, g, b;
+	static boolean clutinit = false;
+	static RGBA_t *lastpalette = NULL;
+	if ((!clutinit) || (lastpalette != palette))
+	{
+		for (r = 0; r < CLUTSIZE; r++)
+			for (g = 0; g < CLUTSIZE; g++)
+				for (b = 0; b < CLUTSIZE; b++)
+					colorlookup[r][g][b] = NearestColor(r << SHIFTCOLORBITS, g << SHIFTCOLORBITS, b << SHIFTCOLORBITS);
+		clutinit = true;
+		lastpalette = palette;
+	}
 }
 
 // V_Init

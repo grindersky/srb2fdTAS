@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -30,7 +30,7 @@
 
 	\return	a*b >> FRACBITS
 
-	
+
 */
 fixed_t FixedMul(fixed_t a, fixed_t b)
 {
@@ -48,7 +48,7 @@ fixed_t FixedMul(fixed_t a, fixed_t b)
 
 	\return	a/b * FRACUNIT
 
-	
+
 */
 fixed_t FixedDiv2(fixed_t a, fixed_t b)
 {
@@ -64,5 +64,4 @@ fixed_t FixedDiv2(fixed_t a, fixed_t b)
 #endif
 	return (fixed_t)c;
 }
-
 #endif // useasm

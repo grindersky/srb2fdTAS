@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Fixed point arithmetics implementation
-/// 
+///
 ///	Fixed point, 32bit as 16.16.
 
 #ifndef __M_FIXED__
@@ -68,7 +68,7 @@ typedef int fixed_t;
 
 	\return	fixed_t
 
-	
+
 */
 FUNCINLINE static ATTRINLINE fixed_t TMulScale16(fixed_t a, fixed_t b, fixed_t c, fixed_t d, fixed_t e, fixed_t f) \
 { \
@@ -85,7 +85,7 @@ FUNCINLINE static ATTRINLINE fixed_t TMulScale16(fixed_t a, fixed_t b, fixed_t c
 
 	\return	fixed_t
 
-	
+
 */
 FUNCINLINE static ATTRINLINE fixed_t DMulScale16(fixed_t a, fixed_t b, fixed_t c, fixed_t d) \
 { \
@@ -166,7 +166,7 @@ FUNCINLINE static ATTRINLINE fixed_t DMulScale16(fixed_t a, fixed_t b, fixed_t c
 
 	\return	a/b
 
-	
+
 */
 FUNCINLINE static ATTRINLINE fixed_t FixedDiv(fixed_t a, fixed_t b)
 {
@@ -194,6 +194,11 @@ FUNCINLINE static ATTRINLINE fixed_t FixedMod(fixed_t a, fixed_t b)
 		return ((r < 0) ? r+b : r);
 	}
 	return (a & (b-1));
+}
+
+FUNCINLINE static ATTRINLINE fixed_t FixedInt(fixed_t a)
+{
+	return FixedMul(a, 1);
 }
 
 #endif //m_fixed.h

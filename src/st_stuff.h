@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -66,6 +66,8 @@ extern patch_t *sbotime;
 extern patch_t *sbocolon;
 extern patch_t *faceprefix[MAXSKINS]; // face status patches
 extern patch_t *facenameprefix[MAXSKINS]; // face background
+
+extern int st_palette;
 
 /** HUD location information (don't move this comment)
   */

@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -66,6 +66,10 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 // Called by linux_x/i_video_xshm.c
 void M_QuitResponse(int ch);
 
+// Screenshot menu updating
+void Moviemode_mode_Onchange(void);
+void Moviemode_option_Onchange(void);
+void Screenshot_option_Onchange(void);
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -88,6 +92,7 @@ void M_QuitResponse(int ch);
 #define IT_STRING2      (32+64)    // a simple string
 #define IT_GRAYPATCH    (16+32+64) // grayed patch or big font string
 #define IT_BIGSLIDER     (128)     // volume sound use this
+#define IT_HEADERTEXT    (48+128)   // Non-selectable header option, displays in yellow offset to the left a little
 #define IT_CENTER       (2048)     // if IT_PATCH, center it on screen
 
 //consvar specific
@@ -104,6 +109,7 @@ void M_QuitResponse(int ch);
 #define IT_CONTROL     (IT_STRING2+IT_CALL)
 #define IT_CVARMAX     (IT_CVAR   +IT_CV_NOMOD)
 #define IT_DISABLED    (IT_SPACE  +IT_GRAYPATCH)
+#define IT_HEADER      (IT_SPACE  +IT_HEADERTEXT)
 
 typedef union
 {

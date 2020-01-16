@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -22,6 +22,7 @@
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
 #include "f_finale.h"
+#include "m_misc.h"
 
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP)
 #define NOWIPE
@@ -46,7 +47,7 @@ static byte *wipe_scr; //screens 0
 
 	\return	unknown
 
-	
+
 */
 static inline int F_InitWipe(int width, int height, tic_t ticks)
 {
@@ -63,7 +64,7 @@ static inline int F_InitWipe(int width, int height, tic_t ticks)
 
 	\return	the change in wipe
 
-	
+
 */
 static int F_DoWipe(int width, int height, tic_t ticks)
 {
@@ -144,7 +145,7 @@ void F_WipeEndScreen(int x, int y, int width, int height)
 
 	\return	if true, the wipe is done
 
-	
+
 */
 
 int F_ScreenWipe(int x, int y, int width, int height, tic_t ticks)
@@ -163,6 +164,9 @@ int F_ScreenWipe(int x, int y, int width, int height, tic_t ticks)
 	}
 
 	rc = F_DoWipe(width, height, ticks);
+
+	if (moviemode)
+		M_SaveFrame();
 
 	if (rc)
 		WipeInAction = false; //Alam: All done?

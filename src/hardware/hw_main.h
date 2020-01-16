@@ -37,6 +37,7 @@ void HWR_FadeScreenMenuBack(unsigned long color, int height);
 void HWR_RenderPlayerView(int viewnumber, player_t *player);
 void HWR_DrawViewBorder(int clearlines);
 void HWR_DrawFlatFill(int x, int y, int w, int h, int flatlumpnum);
+UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *lbmname);
 void HWR_InitTextureMapping(void);
 void HWR_SetViewSize(int blocks);

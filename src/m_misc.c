@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Commonly used routines
-/// 
+///
 ///	Default Config File.
 ///	PCX Screenshots.
 ///	File i/o
@@ -52,7 +52,9 @@
 #include "doomdef.h"
 #include "g_game.h"
 #include "m_misc.h"
+#include "m_menu.h"
 #include "hu_stuff.h"
+#include "st_stuff.h"
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
@@ -60,6 +62,7 @@
 #include "d_main.h"
 #include "m_argv.h"
 #include "i_system.h"
+#include "m_anigif.h"
 
 #ifdef _WIN32_WCE
 #include "sdl/SRB2CE/cehelp.h"
@@ -75,10 +78,83 @@
 
 #include "zlib.h"
 
+#if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
+#define PRIdS "u"
+#elif defined (_WIN32)
+#define PRIdS "Iu"
+#elif defined (DJGPP)
+#define PRIdS "u"
+#else
+#define PRIdS "zu"
+#endif
+
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
-consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE, screenshot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-boolean moviemode = false; // In snapshots files or in 1 MNG file
+
+consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {MM_MNG, "MNG"}, {0, NULL}};
+consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t zlib_mem_level_t[] = {
+	{1, "(Min Memory) 1"},
+	{2, "2"}, {3, "3"}, {4, "4"}, {5, "5"}, {6, "6"}, {7, "7"},
+	{8, "(Optimal) 8"}, //libpng Default
+	{9, "(Max Memory) 9"}, {0, NULL}};
+
+static CV_PossibleValue_t zlib_level_t[] = {
+	{0, "No Compression"},  //Z_NO_COMPRESSION
+	{1, "(Fastest) 1"}, //Z_BEST_SPEED
+	{2, "2"}, {3, "3"}, {4, "4"}, {5, "5"},
+	{6, "(Optimal) 6"}, //Zlib Default
+	{7, "7"}, {8, "8"},
+	{9, "(Maximum) 9"}, //Z_BEST_COMPRESSION
+	{0, NULL}};
+
+static CV_PossibleValue_t zlib_strategy_t[] = {
+	{0, "Normal"}, //Z_DEFAULT_STRATEGY
+	{1, "Filtered"}, //Z_FILTERED
+	{2, "Huffman Only"}, //Z_HUFFMAN_ONLY
+	{3, "RLE"}, //Z_RLE
+	{4, "Fixed"}, //Z_FIXED
+	{0, NULL}};
+
+static CV_PossibleValue_t zlib_window_bits_t[] = {
+#ifdef WBITS_8_OK
+	{8, "256"},
+#endif
+	{9, "512"}, {10, "1k"}, {11, "2k"}, {12, "4k"}, {13, "8k"},
+	{14, "16k"}, {15, "32k"},
+	{0, NULL}};
+
+static CV_PossibleValue_t apng_delay_t[] = {
+	{1, "1x"},
+	{2, "1/2x"},
+	{3, "1/3x"},
+	{4, "1/4x"},
+	{0, NULL}};
+
+// zlib memory usage is as follows:
+// (1 << (zlib_window_bits+2)) +  (1 << (zlib_level+9))
+consvar_t cv_zlib_memory = {"png_memory_level", "7", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_level = {"png_compress_level", "(Optimal) 6", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_strategy = {"png_strategy", "Normal", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_window_bits = {"png_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_zlib_memorya = {"apng_memory_level", "(Max Memory) 9", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_levela = {"apng_compress_level", "4", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_strategya = {"apng_strategy", "RLE", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_window_bitsa = {"apng_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_apng_delay = {"apng_speed", "1/2x", CV_SAVE, apng_delay_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+boolean takescreenshot = false; // Take a screenshot this tic
+
+moviemode_t moviemode = MM_OFF;
+
 
 /** Returns the map number for a map identified by the last two characters in
   * its name.
@@ -104,6 +180,48 @@ int M_MapNumber(char first, char second)
 
 	return 100 + ((int)tolower(first) - 'a') * 36 + (isdigit(second) ? ((int)second - '0') :
 		((int)tolower(second) - 'a') + 10);
+}
+
+
+/** Set of functions to take in a size_t as an argument,
+  * put the argument in a character buffer, and return the
+  * pointer to that buffer.
+  * This is to eliminate usage of PRIdS, so gettext can work
+  * with *all* of SRB2's strings.
+  */
+char *sizeu1(size_t num)
+{
+	static char sizeu1_buf[28];
+	sprintf(sizeu1_buf, "%"PRIdS, num);
+	return sizeu1_buf;
+}
+
+char *sizeu2(size_t num)
+{
+	static char sizeu2_buf[28];
+	sprintf(sizeu2_buf, "%"PRIdS, num);
+	return sizeu2_buf;
+}
+
+char *sizeu3(size_t num)
+{
+	static char sizeu3_buf[28];
+	sprintf(sizeu3_buf, "%"PRIdS, num);
+	return sizeu3_buf;
+}
+
+char *sizeu4(size_t num)
+{
+	static char sizeu4_buf[28];
+	sprintf(sizeu4_buf, "%"PRIdS, num);
+	return sizeu4_buf;
+}
+
+char *sizeu5(size_t num)
+{
+	static char sizeu5_buf[28];
+	sprintf(sizeu5_buf, "%"PRIdS, num);
+	return sizeu5_buf;
 }
 
 // ==========================================================================
@@ -473,8 +591,23 @@ void M_SaveConfig(char *filename)
 	fclose(f);
 }
 
+// ==========================================================================
+//                              SCREENSHOTS
+// ==========================================================================
+static UINT8 screenshot_palette[768];
+static void M_CreateScreenShotPalette(void)
+{
+	size_t i, j;
+	for (i = 0, j = 0; i < 768; i += 3, j++)
+	{
+		RGBA_t locpal = pLocalPalette[(max(st_palette,0)*256)+j];
+		screenshot_palette[i] = locpal.s.red;
+		screenshot_palette[i+1] = locpal.s.green;
+		screenshot_palette[i+2] = locpal.s.blue;
+	}
+}
 
-#if !defined (DC) && !defined (_WIN32_WCE) && !defined (PSP)
+#if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
 	static char freename[13] = "srb2XXXX.ext";
@@ -516,7 +649,7 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 
 		i += add * result;
 
-		if (add < 0 || add > 9999)
+		if (i < 0 || i > 9999)
 			return NULL;
 	}
 
@@ -529,7 +662,376 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 }
 #endif
 
-#ifdef HAVE_MNG // SRB2 MNG Moives
+#ifdef HAVE_PNG
+FUNCNORETURN static void PNG_error(png_structp PNG, png_const_charp pngtext)
+{
+	//CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
+	I_Error("libpng error at %p: %s", PNG, pngtext);
+}
+
+static void PNG_warn(png_structp PNG, png_const_charp pngtext)
+{
+	CONS_Printf("libpng warning at %p: %s", PNG, pngtext);
+}
+
+static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)
+{
+	const png_byte png_interlace = PNG_INTERLACE_NONE; //PNG_INTERLACE_ADAM7
+	if (palette)
+	{
+		png_colorp png_PLTE = png_malloc(png_ptr, sizeof(png_color)*256); //palette
+		const png_byte *pal = palette;
+		png_uint_16 i;
+		for (i = 0; i < 256; i++)
+		{
+			png_PLTE[i].red   = *pal; pal++;
+			png_PLTE[i].green = *pal; pal++;
+			png_PLTE[i].blue  = *pal; pal++;
+		}
+		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_PALETTE,
+		 png_interlace, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+		png_write_info_before_PLTE(png_ptr, png_info_ptr);
+		png_set_PLTE(png_ptr, png_info_ptr, png_PLTE, 256);
+		png_free(png_ptr, (png_voidp)png_PLTE); // safe in libpng-1.2.1+
+		png_set_filter(png_ptr, PNG_FILTER_TYPE_BASE, PNG_FILTER_NONE);
+		png_set_compression_strategy(png_ptr, Z_DEFAULT_STRATEGY);
+	}
+	else
+	{
+		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB,
+		 png_interlace, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+		png_write_info_before_PLTE(png_ptr, png_info_ptr);
+		png_set_compression_strategy(png_ptr, Z_FILTERED);
+	}
+}
+
+static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_byte movie)
+{
+#ifdef PNG_TEXT_SUPPORTED
+#define SRB2PNGTXT 10 //PNG_KEYWORD_MAX_LENGTH(79) is the max
+	png_text png_infotext[SRB2PNGTXT];
+	char keytxt[SRB2PNGTXT][12] = {
+	"Title", "Description", "Playername", "Mapnum", "Mapname",
+	"Location", "Interface", "Render Mode", "Build Date", "Build Time"};
+	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING;
+	png_charp playertxt =  cv_playername.zstring;
+	char desctxt[] = "SRB2 Screenshot";
+	char Movietxt[] = "SRB2 Movie";
+	size_t i;
+	char interfacetxt[] =
+#ifdef HAVE_SDL
+	 "SDL";
+#elif defined (_WINDOWS)
+	 "DirectX";
+#elif defined (PC_DOS)
+	 "Allegro";
+#else
+	 "Unknown";
+#endif
+	char rendermodetxt[9];
+	char maptext[8];
+	char lvlttltext[48];
+	char locationtxt[40];
+	char ctdate[40];
+	char cttime[40];
+
+	switch (rendermode)
+	{
+		case render_soft:
+			strcpy(rendermodetxt, "Software");
+			break;
+		case render_opengl:
+			strcpy(rendermodetxt, "OpenGL");
+			break;
+		default: // Just in case
+			strcpy(rendermodetxt, "None");
+			break;
+	}
+
+	if (gamestate == GS_LEVEL)
+		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
+	else
+		snprintf(maptext, 8, "Unknown");
+
+	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1].lvlttl[0] != '\0')
+		snprintf(lvlttltext, 48, "%s%s%s",
+			mapheaderinfo[gamemap-1].lvlttl,
+			(mapheaderinfo[gamemap-1].nozone) ? "" : " Zone",
+			(mapheaderinfo[gamemap-1].actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1].actnum) : "");
+	else
+		snprintf(lvlttltext, 48, "Unknown");
+
+	if (gamestate == GS_LEVEL && &players[displayplayer] && players[displayplayer].mo)
+		snprintf(locationtxt, 40, "X:%d Y:%d Z:%d A:%d",
+			players[displayplayer].mo->x>>FRACBITS,
+			players[displayplayer].mo->y>>FRACBITS,
+			players[displayplayer].mo->z>>FRACBITS,
+			FixedInt(AngleFixed(players[displayplayer].mo->angle)));
+	else
+		snprintf(locationtxt, 40, "Unknown");
+
+	memset(png_infotext,0x00,sizeof (png_infotext));
+
+	for (i = 0; i < SRB2PNGTXT; i++)
+		png_infotext[i].key  = keytxt[i];
+
+	png_infotext[0].text = titletxt;
+	if (movie)
+		png_infotext[1].text = Movietxt;
+	else
+		png_infotext[1].text = desctxt;
+	png_infotext[2].text = playertxt;
+	png_infotext[3].text = maptext;
+	png_infotext[4].text = lvlttltext;
+	png_infotext[5].text = locationtxt;
+	png_infotext[6].text = interfacetxt;
+	png_infotext[7].text = rendermodetxt;
+	png_infotext[8].text = strncpy(ctdate, compdate, sizeof(ctdate)-1);
+	png_infotext[9].text = strncpy(cttime, comptime, sizeof(cttime)-1);
+
+	png_set_text(png_ptr, png_info_ptr, png_infotext, SRB2PNGTXT);
+#undef SRB2PNGTXT
+#endif
+}
+
+static inline void M_PNGImage(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 height, png_bytep png_buf)
+{
+	png_uint_32 pitch = png_get_rowbytes(png_ptr, png_info_ptr);
+	png_bytepp row_pointers = png_malloc(png_ptr, height* sizeof (png_bytep));
+	png_uint_32 y;
+	for (y = 0; y < height; y++)
+	{
+		row_pointers[y] = png_buf;
+		png_buf += pitch;
+	}
+	png_write_image(png_ptr, row_pointers);
+	png_free(png_ptr, (png_voidp)row_pointers);
+}
+
+#ifdef USE_APNG
+static png_structp apng_ptr = NULL;
+static png_infop   apng_info_ptr = NULL;
+static apng_infop  apng_ainfo_ptr = NULL;
+static png_FILE_p  apng_FILE = NULL;
+static png_uint_32 apng_frames = 0;
+#ifdef PNG_STATIC // Win32 build have static libpng
+#define aPNG_set_acTL png_set_acTL
+#define aPNG_write_frame_head png_write_frame_head
+#define aPNG_write_frame_tail png_write_frame_tail
+#else // outside libpng may not have apng support
+
+#ifndef PNG_WRITE_APNG_SUPPORTED // libpng header may not have apng patch
+
+#ifndef PNG_INFO_acTL
+#define PNG_INFO_acTL 0x10000L
+#endif
+#ifndef PNG_INFO_fcTL
+#define PNG_INFO_fcTL 0x20000L
+#endif
+#ifndef PNG_FIRST_FRAME_HIDDEN
+#define PNG_FIRST_FRAME_HIDDEN       0x0001
+#endif
+#ifndef PNG_DISPOSE_OP_NONE
+#define PNG_DISPOSE_OP_NONE        0x00
+#endif
+#ifndef PNG_DISPOSE_OP_BACKGROUND
+#define PNG_DISPOSE_OP_BACKGROUND  0x01
+#endif
+#ifndef PNG_DISPOSE_OP_PREVIOUS
+#define PNG_DISPOSE_OP_PREVIOUS    0x02
+#endif
+#ifndef PNG_BLEND_OP_SOURCE
+#define PNG_BLEND_OP_SOURCE        0x00
+#endif
+#ifndef PNG_BLEND_OP_OVER
+#define PNG_BLEND_OP_OVER          0x01
+#endif
+#ifndef PNG_HAVE_acTL
+#define PNG_HAVE_acTL             0x4000
+#endif
+#ifndef PNG_HAVE_fcTL
+#define PNG_HAVE_fcTL             0x8000L
+#endif
+
+#endif
+typedef png_uint_32 (*P_png_set_acTL) (png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 num_frames, png_uint_32 num_plays);
+typedef void (*P_png_write_frame_head) (png_structp png_ptr,
+   png_infop info_ptr, png_bytepp row_pointers,
+   png_uint_32 width, png_uint_32 height,
+   png_uint_32 x_offset, png_uint_32 y_offset,
+   png_uint_16 delay_num, png_uint_16 delay_den, png_byte dispose_op,
+   png_byte blend_op);
+
+typedef void (*P_png_write_frame_tail) (png_structp png_ptr,
+   png_infop info_ptr);
+static P_png_set_acTL aPNG_set_acTL = NULL;
+static P_png_write_frame_head aPNG_write_frame_head = NULL;
+static P_png_write_frame_tail aPNG_write_frame_tail = NULL;
+#endif
+
+static inline boolean M_PNGLib(void)
+{
+#ifdef PNG_STATIC // Win32 build have static libpng
+	return true;
+#else
+	static void *pnglib = NULL;
+	if (aPNG_set_acTL && aPNG_write_frame_head && aPNG_write_frame_tail)
+		return true;
+	if (pnglib)
+		return false;
+#ifdef _WIN32
+	pnglib = GetModuleHandleA("libpng.dll");
+	if (!pnglib)
+		pnglib = GetModuleHandleA("libpng12.dll");
+	if (!pnglib)
+		pnglib = GetModuleHandleA("libpng13.dll");
+#elif defined (HAVE_SDL)
+#ifdef __APPLE__
+	pnglib = hwOpen("libpng.dylib");
+#else
+	pnglib = hwOpen("libpng.so");
+#endif
+#endif
+	if (!pnglib)
+		return false;
+#ifdef HAVE_SDL
+	aPNG_set_acTL = hwSym("png_set_acTL", pnglib);
+	aPNG_write_frame_head = hwSym("png_write_frame_head", pnglib);
+	aPNG_write_frame_tail = hwSym("png_write_frame_tail", pnglib);
+#endif
+#ifdef _WIN32
+	aPNG_set_acTL = GetProcAddress("png_set_acTL", pnglib);
+	aPNG_write_frame_head = GetProcAddress("png_write_frame_head", pnglib);
+	aPNG_write_frame_tail = GetProcAddress("png_write_frame_tail", pnglib);
+#endif
+	return (aPNG_set_acTL && aPNG_write_frame_head && aPNG_write_frame_tail);
+#endif
+}
+
+static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep png_buf)
+{
+	png_uint_32 pitch = png_get_rowbytes(png_ptr, png_info_ptr);
+	PNG_CONST png_uint_32 height = vid.height;
+	png_bytepp row_pointers = png_malloc(png_ptr, height* sizeof (png_bytep));
+	png_uint_32 y;
+	png_uint_16 framedelay = (png_uint_16)cv_apng_delay.value;
+
+	apng_frames++;
+
+	for (y = 0; y < height; y++)
+	{
+		row_pointers[y] = png_buf;
+		png_buf += pitch;
+	}
+
+#ifndef PNG_STATIC
+	if (aPNG_write_frame_head)
+#endif
+		aPNG_write_frame_head(apng_ptr, apng_info_ptr, row_pointers,
+			vid.width, /* width */
+			height,    /* height */
+			0,         /* x offset */
+			0,         /* y offset */
+			framedelay, TICRATE,/* delay numerator and denominator */
+			PNG_DISPOSE_OP_BACKGROUND, /* dispose */
+			PNG_BLEND_OP_SOURCE        /* blend */
+		                     );
+
+	png_write_image(png_ptr, row_pointers);
+
+#ifndef PNG_STATIC
+	if (aPNG_write_frame_tail)
+#endif
+		aPNG_write_frame_tail(apng_ptr, apng_info_ptr);
+
+	png_free(png_ptr, (png_voidp)row_pointers);
+}
+
+static void M_PNGfix_acTL(png_structp png_ptr, png_infop png_info_ptr,
+		apng_infop png_ainfo_ptr)
+{
+	apng_set_acTL(png_ptr, png_info_ptr, png_ainfo_ptr, apng_frames, 0);
+
+#ifndef NO_PNG_DEBUG
+	png_debug(1, "in png_write_acTL\n");
+#endif
+}
+
+static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
+{
+	apng_FILE = fopen(filename,"wb+"); // + mode for reading
+	if (!apng_FILE)
+	{
+		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on opening %s for write\n", filename);
+		return false;
+	}
+
+	apng_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
+	 PNG_error, PNG_warn);
+	if (!apng_ptr)
+	{
+		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on initialize libpng\n");
+		fclose(apng_FILE);
+		remove(filename);
+		return false;
+	}
+
+	apng_info_ptr = png_create_info_struct(apng_ptr);
+	if (!apng_info_ptr)
+	{
+		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on allocate for libpng\n");
+		png_destroy_write_struct(&apng_ptr,  NULL);
+		fclose(apng_FILE);
+		remove(filename);
+		return false;
+	}
+
+	apng_ainfo_ptr = apng_create_info_struct(apng_ptr);
+	if (!apng_ainfo_ptr)
+	{
+		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on allocate for apng\n");
+		png_destroy_write_struct(&apng_ptr, &apng_info_ptr);
+		fclose(apng_FILE);
+		remove(filename);
+		return false;
+	}
+
+	png_init_io(apng_ptr, apng_FILE);
+
+#ifdef PNG_SET_USER_LIMITS_SUPPORTED
+	png_set_user_limits(apng_ptr, MAXVIDWIDTH, MAXVIDHEIGHT);
+#endif
+
+	//png_set_filter(apng_ptr, 0, PNG_ALL_FILTERS);
+
+	png_set_compression_level(apng_ptr, cv_zlib_levela.value);
+	png_set_compression_mem_level(apng_ptr, cv_zlib_memorya.value);
+	png_set_compression_strategy(apng_ptr, cv_zlib_strategya.value);
+	png_set_compression_window_bits(apng_ptr, cv_zlib_window_bitsa.value);
+
+	M_PNGhdr(apng_ptr, apng_info_ptr, vid.width, vid.height, pal);
+
+	M_PNGText(apng_ptr, apng_info_ptr, true);
+
+	apng_set_set_acTL_fn(apng_ptr, apng_ainfo_ptr, aPNG_set_acTL);
+
+	apng_set_acTL(apng_ptr, apng_info_ptr, apng_ainfo_ptr, PNG_UINT_31_MAX, 0);
+
+	apng_write_info(apng_ptr, apng_info_ptr, apng_ainfo_ptr);
+
+	apng_frames = 0;
+
+	return true;
+}
+#endif
+#endif
+
+// ==========================================================================
+//                             MOVIE MODE
+// ==========================================================================
+
+#ifdef HAVE_MNG // SRB2 MNG Movies
 
 static mng_handle MNG_ptr;
 
@@ -562,7 +1064,7 @@ static mng_bool MNG_DECL MNG_write (mng_handle  hHandle,
                                     mng_ptr     pBuf,
                                     mng_uint32  iBuflen,
                                     mng_uint32p pWritten)
-{                                      
+{
   MNG_userdatap privdata = (MNG_userdatap)mng_get_userdata(hHandle);
   *pWritten = fwrite(pBuf, 1, iBuflen, privdata->fh);
   return MNG_TRUE;
@@ -621,45 +1123,24 @@ static boolean M_SetupMNG(const mng_pchar filename, byte *pal)
 	return true;
 }
 
-boolean M_OpenMNG(void)
+boolean M_OpenMNG(const char *filename)
 {
-	const char *freename = NULL, *pathname = ".";
 	boolean ret = false;
-
-	if (cv_screenshot_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
-	else if (cv_screenshot_option.value == 1)
-		pathname = srb2home;
-	else if (cv_screenshot_option.value == 2)
-		pathname = srb2path;
-	else if (cv_screenshot_option.value == 3 && *cv_screenshot_folder.string != '\0')
-		pathname = cv_screenshot_folder.string;
 
 	if (rendermode == render_none)
 		I_Error("Can't take a MNG movie without a render system");
 	else
 		freename = Newsnapshotfile(pathname,"mng");
 
-	if (!freename)
-		goto failure;
-
 	if (rendermode == render_soft)
-		ret = M_SetupMNG(va(pandf,pathname,freename), W_CacheLumpName("PLAYPAL", PU_CACHE));
+		ret = M_SetupMNG(filename), W_CacheLumpName("PLAYPAL", PU_CACHE);
 	else
-		ret = M_SetupMNG(va(pandf,pathname,freename), NULL);
+		ret = M_SetupMNG(filename, NULL);
 
-failure:
-	if (!ret)
-	{
-		if (freename)
-			CONS_Printf("Couldn't create MNG movie file %s in %s\n", freename, pathname);
-		else
-			CONS_Printf("Couldn't create MNG movie file (all 10000 slots used!) in %s\n", pathname);
-	}
 	return ret;
 }
 
-void M_SaveMNG(void)
+void MNG_frame(void)
 {
 	MNG_userdatap privdata;
 	mng_retcode ret;
@@ -707,41 +1188,294 @@ boolean M_CloseMNG(void)
 
 #endif
 
+#if NUMSCREENS > 2
+static inline moviemode_t M_StartMovieAPNG(const char *pathname)
+{
+#ifdef USE_APNG
+	UINT8 *palette = NULL;
+	const char *freename = NULL;
+	boolean ret = false;
+
+	if (!M_PNGLib())
+	{
+		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: libpng not found\n");
+		return MM_OFF;
+	}
+
+	if (!(freename = Newsnapshotfile(pathname,"png")))
+	{
+		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: no slots open in %s\n", pathname);
+		return MM_OFF;
+	}
+
+	if (rendermode == render_soft)
+	{
+		M_CreateScreenShotPalette();
+		palette = screenshot_palette;
+	}
+
+	ret = M_SetupaPNG(va(pandf,pathname,freename), palette);
+
+	if (!ret)
+	{
+		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: error creating %s in %s\n", freename, pathname);
+		return MM_OFF;
+	}
+	return MM_APNG;
+#else
+	// no APNG support exists
+	(void)pathname;
+	CONS_Printf("ERROR: Couldn't create aPNG: this build lacks aPNG support\n");
+	return MM_OFF;
+#endif
+}
+
+static inline moviemode_t M_StartMovieGIF(const char *pathname)
+{
+#ifdef HAVE_ANIGIF
+	const char *freename;
+
+	if (!(freename = Newsnapshotfile(pathname,"gif")))
+	{
+		CONS_Printf("ERROR: Couldn't create GIF: no slots open in %s\n", pathname);
+		return MM_OFF;
+	}
+
+	if (!GIF_open(va(pandf,pathname,freename)))
+	{
+		CONS_Printf("ERROR: Couldn't create GIF: error creating %s in %s\n", freename, pathname);
+		return MM_OFF;
+	}
+	return MM_GIF;
+#else
+	// no GIF support exists
+	(void)pathname;
+	CONS_Printf("ERROR: Couldn't create GIF: this build lacks GIF support\n");
+	return MM_OFF;
+#endif
+}
+
+static inline moviemode_t M_StartMovieMNG(const char *pathname)
+{
+#ifdef HAVE_MNG
+	const char *freename;
+
+	if (!(freename = Newsnapshotfile(pathname,"mng")))
+	{
+		CONS_Printf("ERROR: Couldn't create MNG: no slots open in %s\n", pathname);
+		return MM_OFF;
+	}
+
+	if (!M_OpenMNG(va(pandf,pathname,freename)))
+	{
+		CONS_Printf("ERROR: Couldn't create MNG: error creating %s in %s\n", freename, pathname);
+		return MM_OFF;
+	}
+	return MM_MNG;
+#else
+	// no MNG support exists
+	(void)pathname;
+	CONS_Printf("ERROR: Couldn't create MNG: this build lacks MNG support\n");
+	return MM_OFF;
+#endif
+}
+#endif
+
+void M_StartMovie(void)
+{
+#if NUMSCREENS > 2
+	char pathname[MAX_WADPATH];
+
+	if (moviemode)
+		return;
+
+	if (cv_movie_option.value == 0)
+		strcpy(pathname, usehome ? srb2home : srb2path);
+	else if (cv_movie_option.value == 1)
+		strcpy(pathname, srb2home);
+	else if (cv_movie_option.value == 2)
+		strcpy(pathname, srb2path);
+	else if (cv_movie_option.value == 3 && *cv_movie_folder.string != '\0')
+		strcpy(pathname, cv_movie_folder.string);
+
+	if (cv_movie_option.value != 3)
+	{
+		strcat(pathname, PATHSEP"movies"PATHSEP);
+		I_mkdir(pathname, 0755);
+	}
+
+	if (rendermode == render_none)
+		I_Error("Can't make a movie without a render system\n");
+
+	switch (cv_moviemode.value)
+	{
+		case MM_GIF:
+			moviemode = M_StartMovieGIF(pathname);
+			break;
+		case MM_APNG:
+			moviemode = M_StartMovieAPNG(pathname);
+			break;
+		case MM_SCREENSHOT:
+			moviemode = MM_SCREENSHOT;
+			break;
+		case MM_MNG:
+			moviemode = M_StartMovieMNG(pathname);
+			break;
+		default: //???
+			return;
+	}
+
+	if (moviemode == MM_APNG)
+		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "aPNG");
+	else if (moviemode == MM_GIF)
+		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "GIF");
+	else if (moviemode == MM_SCREENSHOT)
+		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "screenshots");
+	else if (moviemode == MM_MNG)
+		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "MNG");
+
+	//singletics = (moviemode != MM_OFF);
+#endif
+}
+
+void M_SaveFrame(void)
+{
+#if NUMSCREENS > 2
+	// paranoia: should be unnecessary without singletics
+	static tic_t oldtic = 0;
+
+	if (oldtic == I_GetTime())
+		return;
+	else
+		oldtic = I_GetTime();
+
+	switch (moviemode)
+	{
+		case MM_SCREENSHOT:
+			takescreenshot = true;
+			return;
+		case MM_GIF:
+			GIF_frame();
+			return;
+		case MM_APNG:
+#ifdef USE_APNG
+			{
+				UINT8 *linear = NULL;
+				if (!apng_FILE) // should not happen!!
+				{
+					moviemode = MM_OFF;
+					return;
+				}
+
+				if (rendermode == render_soft)
+				{
+					// munge planar buffer to linear
+					linear = screens[2];
+					I_ReadScreen(linear);
+				}
+#ifdef HWRENDER
+				else
+					linear = HWR_GetScreenshot();
+#endif
+				M_PNGFrame(apng_ptr, apng_info_ptr, (png_bytep)linear);
+#ifdef HWRENDER
+				if (rendermode != render_soft && linear)
+					free(linear);
+#endif
+
+				if (apng_frames == PNG_UINT_31_MAX)
+				{
+					CONS_Alert(CONS_NOTICE, M_GetText("Max movie size reached\n"));
+					M_StopMovie();
+				}
+			}
+#else
+			moviemode = MM_OFF;
+#endif
+			return;
+		case MM_MNG:
+#ifdef HAVE_MNG
+			MNG_frame();
+#else
+			moviemode = MM_OFF;
+#endif
+		default:
+			return;
+	}
+#endif
+}
+
+void M_StopMovie(void)
+{
+#if NUMSCREENS > 2
+	switch (moviemode)
+	{
+		case MM_GIF:
+			if (!GIF_close())
+				return;
+			break;
+		case MM_APNG:
+#ifdef USE_APNG
+			if (!apng_FILE)
+				return;
+
+			if (apng_frames)
+			{
+				M_PNGfix_acTL(apng_ptr, apng_info_ptr, apng_ainfo_ptr);
+				apng_write_end(apng_ptr, apng_info_ptr, apng_ainfo_ptr);
+			}
+
+			png_destroy_write_struct(&apng_ptr, &apng_info_ptr);
+
+			fclose(apng_FILE);
+			apng_FILE = NULL;
+			CONS_Printf("aPNG closed; wrote %u frames\n", (UINT32)apng_frames);
+			apng_frames = 0;
+			break;
+#else
+			return;
+#endif
+		case MM_SCREENSHOT:
+			break;
+		case MM_MNG:
+#ifdef HAVE_MNG
+			if (!M_CloseMNG())
+				return;
+#else
+			return;
+#endif
+		default:
+			return;
+	}
+	moviemode = MM_OFF;
+	CONS_Printf(M_GetText("Movie mode disabled.\n"));
+#endif
+}
+
 // ==========================================================================
 //                            SCREEN SHOTS
 // ==========================================================================
 #ifdef USE_PNG
-static void PNG_error(png_structp PNG, png_const_charp text)
-{
-	CONS_Printf("libpng error at %p: %s", PNG,text);
-	//I_Error("libpng error at %p: %s", PNG,text);
-}
-
-static void PNG_warn(png_structp PNG, png_const_charp text)
-{
-	CONS_Printf("libpng warning at %p: %s", PNG, text);
-}
-
 /** Writes a PNG file to disk.
   *
   * \param filename Filename to write to.
   * \param data     The image data.
   * \param width    Width of the picture.
   * \param height   Height of the picture.
-  * \param palette  Palette of image data
+  * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
   */
-boolean M_SavePNG(const char *filename, void *data, int width, int height, byte *palette)
+boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
-	const int png_interlace = PNG_INTERLACE_NONE; //PNG_INTERLACE_ADAM7
+	PNG_CONST png_byte *PLTE = (const png_byte *)palette;
 #ifdef PNG_SETJMP_SUPPORTED
 #ifdef USE_FAR_KEYWORD
 	jmp_buf jmpbuf;
 #endif
 #endif
-	FILE *png_FILE;
+	png_FILE_p png_FILE;
 
 	png_FILE = fopen(filename,"wb");
 	if (!png_FILE)
@@ -750,8 +1484,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, byte 
 		return false;
 	}
 
-	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
-	 PNG_error, PNG_warn);
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, PNG_error, PNG_warn);
 	if (!png_ptr)
 	{
 		CONS_Printf("M_SavePNG: Error on initialize libpng\n");
@@ -791,75 +1524,20 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, byte 
 	png_set_user_limits(png_ptr, MAXVIDWIDTH, MAXVIDHEIGHT);
 #endif
 
-	png_set_filter(png_ptr, 0, PNG_ALL_FILTERS);
+	//png_set_filter(png_ptr, 0, PNG_ALL_FILTERS);
 
-	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-	png_set_compression_window_bits(png_ptr, 15);
-	png_set_compression_mem_level(png_ptr, 9);
-#ifdef Z_RLE
-	png_set_compression_strategy(png_ptr, Z_RLE);
-#endif
+	png_set_compression_level(png_ptr, cv_zlib_level.value);
+	png_set_compression_mem_level(png_ptr, cv_zlib_memory.value);
+	png_set_compression_strategy(png_ptr, cv_zlib_strategy.value);
+	png_set_compression_window_bits(png_ptr, cv_zlib_window_bits.value);
 
-	if (palette)
-	{
-		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_PALETTE,
-		 png_interlace, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-		png_set_PLTE(png_ptr, png_info_ptr, (png_colorp)palette, 256);
-	}
-	else
-	{
-		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB,
-		 png_interlace, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-		png_set_bgr(png_ptr); //PNG_WRITE_BGR_SUPPORTED
-	}
+	M_PNGhdr(png_ptr, png_info_ptr, width, height, PLTE);
 
-	{
-#ifdef PNG_TEXT_SUPPORTED
-		int i;
-#define SRB2PNGTXT 5
-		png_text png_infotext[SRB2PNGTXT];
-		char keytxt[SRB2PNGTXT][12] = {"Title", "Author", "Description", "Playername", "Interface"}; //PNG_KEYWORD_MAX_LENGTH(79) is the max
-		char titletxt[] = "Sonic Robo Blast 2"VERSIONSTRING;
-		char *authortxt = I_GetUserName();
-		char *playertxt =  cv_playername.zstring;
-		char desctxt[] = "SRB2 Screenshot";
-		char interfacetxt[] =
-#ifdef SDL
-		"SDL";
-#elif defined (_WINDOWS)
-		"DirectX";
-#elif defined (PC_DOS)
-		"Allegro";
-#else
-		"Unknown";
-#endif
-		memset(png_infotext,0x00,sizeof (png_infotext));
+	M_PNGText(png_ptr, png_info_ptr, false);
 
-		for (i = 0; i < SRB2PNGTXT; i++)
-			png_infotext[i].key  = keytxt[i];
+	png_write_info(png_ptr, png_info_ptr);
 
-		png_infotext[0].text = titletxt;
-		png_infotext[1].text = authortxt;
-		png_infotext[2].text = desctxt;
-		png_infotext[3].text = playertxt;
-		png_infotext[4].text = interfacetxt;
-
-		png_set_text(png_ptr, png_info_ptr, png_infotext, SRB2PNGTXT);
-#undef SRB2PNGTXT
-#endif
-		png_write_info(png_ptr, png_info_ptr);
-	}
-
-	{
-		png_uint_32 pitch = png_get_rowbytes(png_ptr, png_info_ptr);
-		png_bytep png_buf = (png_bytep)data;
-		png_bytep *row_pointers = png_malloc(png_ptr, height* sizeof (png_bytep));
-		int y;
-		for (y = 0; y < height; y++)
-			row_pointers[y] = png_buf + y*pitch;
-		png_write_image(png_ptr, row_pointers);
-		png_free(png_ptr, (png_voidp)row_pointers);
-	}
+	M_PNGImage(png_ptr, png_info_ptr, height, data);
 
 	png_write_end(png_ptr, png_info_ptr);
 	png_destroy_write_struct(&png_ptr, &png_info_ptr);
@@ -872,23 +1550,23 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, byte 
   */
 typedef struct
 {
-	char manufacturer;
-	char version;
-	char encoding;
-	char bits_per_pixel;
+	UINT8 manufacturer;
+	UINT8 version;
+	UINT8 encoding;
+	UINT8 bits_per_pixel;
 
-	unsigned short xmin, ymin;
-	unsigned short xmax, ymax;
-	unsigned short hres, vres;
-	unsigned char palette[48];
+	UINT16 xmin, ymin;
+	UINT16 xmax, ymax;
+	UINT16 hres, vres;
+	UINT8  palette[48];
 
-	char reserved;
-	char color_planes;
-	unsigned short bytes_per_line;
-	unsigned short palette_type;
+	UINT8 reserved;
+	UINT8 color_planes;
+	UINT16 bytes_per_line;
+	UINT16 palette_type;
 
 	char filler[58];
-	unsigned char data; ///< Unbounded; used for all picture data.
+	UINT8 data; ///< Unbounded; used for all picture data.
 } pcx_t;
 
 /** Writes a PCX file to disk.
@@ -899,13 +1577,13 @@ typedef struct
   * \param height   Height of the picture.
   * \param palette  Palette of image data
   */
-#if !defined (DC) && !defined (_WIN32_WCE) && !defined (PSP)
-static boolean WritePCXfile(const char *filename, const byte *data, int width, int height, const byte *palette)
+#if NUMSCREENS > 2
+static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height, const UINT8 *pal)
 {
 	int i;
 	size_t length;
 	pcx_t *pcx;
-	byte *pack;
+	UINT8 *pack;
 
 	pcx = Z_Malloc(width*height*2 + 1000, PU_STATIC, NULL);
 
@@ -919,6 +1597,7 @@ static boolean WritePCXfile(const char *filename, const byte *data, int width, i
 	pcx->hres = SHORT(width);
 	pcx->vres = SHORT(height);
 	memset(pcx->palette, 0, sizeof (pcx->palette));
+	pcx->reserved = 0;
 	pcx->color_planes = 1; // chunky image
 	pcx->bytes_per_line = SHORT(width);
 	pcx->palette_type = SHORT(1); // not a grey scale
@@ -940,11 +1619,19 @@ static boolean WritePCXfile(const char *filename, const byte *data, int width, i
 
 	// write the palette
 	*pack++ = 0x0c; // palette ID byte
-	for (i = 0; i < 768; i++)
-		*pack++ = *palette++;
+
+	// write color table
+	{
+		for (i = 0; i < 256; i++)
+		{
+			*pack++ = *pal; pal++;
+			*pack++ = *pal; pal++;
+			*pack++ = *pal; pal++;
+		}
+	}
 
 	// write output file
-	length = pack - (byte *)pcx;
+	length = pack - (UINT8 *)pcx;
 	i = FIL_WriteFile(filename, pcx, length);
 
 	Z_Free(pcx);
@@ -953,40 +1640,55 @@ static boolean WritePCXfile(const char *filename, const byte *data, int width, i
 #endif
 #endif
 
+void M_ScreenShot(void)
+{
+	takescreenshot = true;
+}
+
 /** Takes a screenshot.
-  * The screenshot is saved as "srb2xxxx.pcx" (or "srb2xxxx.tga" in hardware
-  * rendermode) where xxxx is the lowest four-digit number for which a file
-  * does not already exist.
+  * The screenshot is saved as "srb2xxxx.png" where xxxx is the lowest
+  * four-digit number for which a file does not already exist.
   *
   * \sa HWR_ScreenShot
   */
-void M_ScreenShot(void)
+void M_DoScreenShot(void)
 {
-#if !defined (DC) && !defined (_WIN32_WCE) && !defined (PSP)
-	const char *freename = NULL, *pathname = ".";
+#if NUMSCREENS > 2
+	const char *freename = NULL;
+	char pathname[MAX_WADPATH];
 	boolean ret = false;
-	byte *linear = NULL;
+	UINT8 *linear = NULL;
+
+	// Don't take multiple screenshots, obviously
+	takescreenshot = false;
+
+	// how does one take a screenshot without a render system?
+	if (rendermode == render_none)
+		return;
 
 	if (cv_screenshot_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
+		strcpy(pathname, usehome ? srb2home : srb2path);
 	else if (cv_screenshot_option.value == 1)
-		pathname = srb2home;
+		strcpy(pathname, srb2home);
 	else if (cv_screenshot_option.value == 2)
-		pathname = srb2path;
+		strcpy(pathname, srb2path);
 	else if (cv_screenshot_option.value == 3 && *cv_screenshot_folder.string != '\0')
-		pathname = cv_screenshot_folder.string;
+		strcpy(pathname, cv_screenshot_folder.string);
+
+	if (cv_screenshot_option.value != 3)
+	{
+		strcat(pathname, PATHSEP"screenshots"PATHSEP);
+		I_mkdir(pathname, 0755);
+	}
 
 #ifdef USE_PNG
-	if (rendermode != render_none)
-		freename = Newsnapshotfile(pathname,"png");
+	freename = Newsnapshotfile(pathname,"png");
 #else
 	if (rendermode == render_soft)
 		freename = Newsnapshotfile(pathname,"pcx");
-	else if (rendermode != render_none)
+	else if (rendermode == render_opengl)
 		freename = Newsnapshotfile(pathname,"tga");
 #endif
-	else
-		I_Error("Can't take a screenshot without a render system");
 
 	if (rendermode == render_soft)
 	{
@@ -998,37 +1700,55 @@ void M_ScreenShot(void)
 	if (!freename)
 		goto failure;
 
-		// save the pcx file
+	// save the pcx file
 #ifdef HWRENDER
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		ret = HWR_Screenshot(va(pandf,pathname,freename));
 	else
 #endif
-	if (rendermode != render_none)
 	{
+		M_CreateScreenShotPalette();
 #ifdef USE_PNG
-		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height,
-			W_CacheLumpName("PLAYPAL", PU_CACHE));
+		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #else
-		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height,
-			W_CacheLumpName("PLAYPAL", PU_CACHE));
+		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif
 	}
 
 failure:
 	if (ret)
 	{
-		if (!moviemode)
-			CONS_Printf("screen shot %s saved in %s\n", freename, pathname);
+		if (moviemode != MM_SCREENSHOT)
+			CONS_Printf(M_GetText("Screen shot %s saved in %s\n"), freename, pathname);
 	}
 	else
 	{
 		if (freename)
-			CONS_Printf("Couldn't create screen shot %s in %s\n", freename, pathname);
+			CONS_Printf(M_GetText("Couldn't create screen shot %s in %s\n"), freename, pathname);
 		else
-			CONS_Printf("Couldn't create screen shot (all 10000 slots used!) in %s\n", pathname);
+			CONS_Printf(M_GetText("Couldn't create screen shot in %s (all 10000 slots used!)\n"), pathname);
+
+		if (moviemode == MM_SCREENSHOT)
+			M_StopMovie();
 	}
 #endif
+}
+
+boolean M_ScreenshotResponder(event_t *ev)
+{
+	INT32 ch = -1;
+	if (dedicated || ev->type != ev_keydown)
+		return false;
+
+	ch = ev->data1;
+
+	if (ch == KEY_F8)
+		M_ScreenShot();
+	else if (ch == KEY_F9)
+		((moviemode) ? M_StopMovie : M_StartMovie)();
+	else
+		return false;
+	return true;
 }
 
 // ==========================================================================

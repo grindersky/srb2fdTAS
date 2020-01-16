@@ -695,6 +695,18 @@ static inline boolean saveTGA(const char *file_name, const void *buffer,
 // screen shot
 // --------------------------------------------------------------------------
 
+UINT8 *HWR_GetScreenshot(void)
+{
+	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
+
+	if (!buf)
+		return NULL;
+	// returns 24bit 888 RGB
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
+	CONS_Printf("%d", buf);
+	return buf;
+}
+
 boolean HWR_Screenshot(const char *lbmname)
 {
 	int i;

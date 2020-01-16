@@ -292,6 +292,7 @@ OBJS := $(i_main_o) \
 		$(OBJDIR)/m_cheat.o  \
 		$(OBJDIR)/m_fixed.o  \
 		$(OBJDIR)/m_menu.o   \
+		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_misc.o   \
 		$(OBJDIR)/m_random.o \
 		$(OBJDIR)/info.o     \

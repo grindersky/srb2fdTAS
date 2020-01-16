@@ -385,7 +385,7 @@ static boolean SV_SendServerConfig(int node)
 	netbuffer->u.servercfg.modifiedgame = (byte)modifiedgame;
 	op = p = (char *)netbuffer->u.servercfg.netcvarstates;
 	CV_SaveNetVars((char **)&p);
-	
+
 	{
 		const size_t len = sizeof (serverconfig_pak) + (size_t)(p - op);
 
@@ -826,6 +826,8 @@ static void CL_ConnectToServer(void)
 
 			CON_Drawer();
 			I_FinishUpdate(); // page flip or blit buffer
+			if (moviemode)
+				M_SaveFrame();
 		}
 		else I_Sleep();
 
