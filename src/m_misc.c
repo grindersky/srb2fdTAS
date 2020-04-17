@@ -18,7 +18,8 @@
 /// \brief Commonly used routines
 ///
 ///	Default Config File.
-///	PCX Screenshots.
+///	Screenshots.
+/// Moviemode.
 ///	File i/o
 
 #ifdef __GNUC__
@@ -86,6 +87,11 @@
 #define PRIdS "u"
 #else
 #define PRIdS "zu"
+#endif
+
+#if defined (PNG_WRITE_APNG_SUPPORTED) //|| !defined(PNG_STATIC)
+	#include "apng.h"
+	#define USE_APNG
 #endif
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
@@ -961,7 +967,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 	apng_FILE = fopen(filename,"wb+"); // + mode for reading
 	if (!apng_FILE)
 	{
-		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on opening %s for write\n", filename);
+		CONS_Printf("M_StartMovie: Error on opening %s for write\n", filename);
 		return false;
 	}
 
@@ -969,7 +975,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 	 PNG_error, PNG_warn);
 	if (!apng_ptr)
 	{
-		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on initialize libpng\n");
+		CONS_Printf("M_StartMovie: Error on initialize libpng\n");
 		fclose(apng_FILE);
 		remove(filename);
 		return false;
@@ -978,7 +984,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 	apng_info_ptr = png_create_info_struct(apng_ptr);
 	if (!apng_info_ptr)
 	{
-		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on allocate for libpng\n");
+		CONS_Printf("M_StartMovie: Error on allocate for libpng\n");
 		png_destroy_write_struct(&apng_ptr,  NULL);
 		fclose(apng_FILE);
 		remove(filename);
@@ -988,7 +994,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 	apng_ainfo_ptr = apng_create_info_struct(apng_ptr);
 	if (!apng_ainfo_ptr)
 	{
-		CONS_Debug(DBG_RENDER, "M_StartMovie: Error on allocate for apng\n");
+		CONS_Printf("M_StartMovie: Error on allocate for apng\n");
 		png_destroy_write_struct(&apng_ptr, &apng_info_ptr);
 		fclose(apng_FILE);
 		remove(filename);
@@ -1196,13 +1202,13 @@ static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 
 	if (!M_PNGLib())
 	{
-		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: libpng not found\n");
+		CONS_Printf("Couldn't create aPNG: libpng not found\n");
 		return MM_OFF;
 	}
 
 	if (!(freename = Newsnapshotfile(pathname,"png")))
 	{
-		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: no slots open in %s\n", pathname);
+		CONS_Printf("Couldn't create aPNG: no slots open in %s\n", pathname);
 		return MM_OFF;
 	}
 
@@ -1216,7 +1222,7 @@ static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 
 	if (!ret)
 	{
-		CONS_Alert(CONS_ERROR, "Couldn't create aPNG: error creating %s in %s\n", freename, pathname);
+		CONS_Printf("ERROR: Couldn't create aPNG: error creating %s in %s\n", freename, pathname);
 		return MM_OFF;
 	}
 	return MM_APNG;
@@ -1383,7 +1389,7 @@ void M_SaveFrame(void)
 
 				if (apng_frames == PNG_UINT_31_MAX)
 				{
-					CONS_Alert(CONS_NOTICE, M_GetText("Max movie size reached\n"));
+					CONS_Printf(M_GetText("Max movie size reached\n"));
 					M_StopMovie();
 				}
 			}

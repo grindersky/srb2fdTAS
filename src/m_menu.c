@@ -3787,41 +3787,37 @@ menu_t DataOptionsDef =
 
 static menuitem_t ScreenshotOptionsMenu[] =
 {
-	{IT_HEADER, NULL, "General", NULL, 0},
-	{IT_STRING|IT_CVAR, NULL, "Use color profile", &cv_screenshot_colorprofile,     6},
+	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 0},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          10},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 20},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                45},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 55},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              65},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           75},
 
-	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 16},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          22},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 27},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                42},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 47},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              52},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           57},
+	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 85},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              95},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder, 	  105},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 130},
 
-	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 64},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              70},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder, 	  75},
-	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 90},
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              140},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             150},
 
-	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              95},
-	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             100},
-
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              95},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               100},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            105},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         110},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              140},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               150},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            160},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         170},
 };
 
 enum
 {
-	op_screenshot_colorprofile = 1,
-	op_screenshot_folder = 4,
-	op_movie_folder = 11,
-	op_screenshot_capture = 12,
-	op_screenshot_gif_start = 13,
-	op_screenshot_gif_end = 14,
-	op_screenshot_apng_start = 15,
-	op_screenshot_apng_end = 18,
+	op_screenshot_folder = 2,
+	op_movie_folder = 9,
+	op_screenshot_capture = 10,
+	op_screenshot_gif_start = 11,
+	op_screenshot_gif_end = 12,
+	op_screenshot_apng_start = 13,
+	op_screenshot_apng_end = 16,
 };
 
 static menuitem_t EraseDataMenu[] =
@@ -3832,9 +3828,9 @@ static menuitem_t EraseDataMenu[] =
 
 menu_t EraseDataDef =
 {
-	"M_DATA",
+	"M_OPTTTL",
 	"OPTIONS",
-	sizeof (DataOptionsMenu)/sizeof (menuitem_t),
+	sizeof (EraseDataMenu)/sizeof (menuitem_t),
 	&DataOptionsDef,
 	EraseDataMenu,
 	M_DrawGenericMenu,
@@ -3845,7 +3841,7 @@ menu_t EraseDataDef =
 
 menu_t ScreenshotOptionsDef =
 {
-	"M_DATA",
+	"M_OPTTTL",
 	"OPTIONS",
 	sizeof (ScreenshotOptionsMenu)/sizeof (menuitem_t),
 	&DataOptionsDef,

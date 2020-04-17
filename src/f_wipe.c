@@ -102,6 +102,9 @@ static int F_DoWipe(int width, int height, tic_t ticks)
 			w++;
 			e++;
 		}
+
+		if (moviemode)
+			M_SaveFrame();
 	}
 	return !changed;
 }
@@ -164,9 +167,6 @@ int F_ScreenWipe(int x, int y, int width, int height, tic_t ticks)
 	}
 
 	rc = F_DoWipe(width, height, ticks);
-
-	if (moviemode)
-		M_SaveFrame();
 
 	if (rc)
 		WipeInAction = false; //Alam: All done?

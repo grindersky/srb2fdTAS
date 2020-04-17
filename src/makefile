@@ -323,6 +323,7 @@ OBJS := $(i_main_o) \
 		$(OBJDIR)/r_splats.o \
 		$(OBJDIR)/r_things.o \
 		$(OBJDIR)/screen.o   \
+		$(OBJDIR)/apng.o  \
 		$(OBJDIR)/v_video.o  \
 		$(OBJDIR)/s_sound.o  \
 		$(OBJDIR)/sounds.o   \
