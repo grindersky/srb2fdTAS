@@ -31,6 +31,10 @@
 #include <math.h>
 #include "r_opengl.h"
 
+/* Raster functions */
+#define pglPixelStorei glPixelStorei
+#define pglReadPixels glReadPixels
+
 // for KOS: GL_TEXTURE_ENV, glAlphaFunc, glColorMask, glPolygonOffset, glReadPixels, GL_ALPHA_TEST, GL_POLYGON_OFFSET_FILL
 
 // ==========================================================================
@@ -81,7 +85,6 @@ static GLdouble    modelMatrix[16];
 static GLdouble    projMatrix[16];
 static GLint       viewport[4];
 #endif
-
 
 #ifdef USE_PALETTED_TEXTURE
 	PFNGLCOLORTABLEEXTPROC  glColorTableEXT = NULL;
@@ -395,29 +398,52 @@ EXPORT void HWRAPI(ClearMipMapCache) (void)
 //                  : store pixels as 16bit 565 RGB
 // Returns          : 16bit 565 RGB pixel array stored in dst_data
 // -----------------+
-EXPORT void HWRAPI(ReadRect) (int x, int y, int width, int height,
-                                int dst_stride, unsigned short * dst_data)
+EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
+                                INT32 dst_stride, UINT16 * dst_data)
 {
+	INT32 i;
 	// DBG_Printf ("ReadRect()\n");
-	GLubyte *image;
-	int i, j;
-
-	dst_stride = 0;
-#ifdef KOS_GL_COMPATIBILITY
-	x = y = width = height = i = j = 0;
-	image = dst_data = NULL;
-#else
-	image = (GLubyte *) malloc(width*height*3*sizeof (GLubyte));
-	glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
-	for (i = height-1; i >= 0; i--)
-		for (j = 0; j < width; j++)
-			dst_data[(height-1-i)*width+j] = (unsigned short)(
-			                ((image[(i*width+j)*3]>>3)<<11) |
-			                ((image[(i*width+j)*3+1]>>2)<<5) |
-			                ((image[(i*width+j)*3+2]>>3)));
-	free(image);
-#endif
+	if (dst_stride == width*3)
+	{
+		GLubyte*top = (GLvoid*)dst_data, *bottom = top + dst_stride * (height - 1);
+		GLubyte *row = malloc(dst_stride);
+		if (!row) return;
+		pglPixelStorei(GL_PACK_ALIGNMENT, 1);
+		pglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, dst_data);
+		pglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		for(i = 0; i < height/2; i++)
+		{
+			memcpy(row, top, dst_stride);
+			memcpy(top, bottom, dst_stride);
+			memcpy(bottom, row, dst_stride);
+			top += dst_stride;
+			bottom -= dst_stride;
+		}
+		free(row);
+	}
+	else
+	{
+		INT32 j;
+		GLubyte *image = malloc(width*height*3*sizeof (*image));
+		if (!image) return;
+		pglPixelStorei(GL_PACK_ALIGNMENT, 1);
+		pglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
+		pglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		for (i = height-1; i >= 0; i--)
+		{
+			for (j = 0; j < width; j++)
+			{
+				dst_data[(height-1-i)*width+j] =
+				(UINT16)(
+				                 ((image[(i*width+j)*3]>>3)<<11) |
+				                 ((image[(i*width+j)*3+1]>>2)<<5) |
+				                 ((image[(i*width+j)*3+2]>>3)));
+			}
+		}
+		free(image);
+	}
 }
+
 
 #ifdef HAVE_SDL
 EXPORT boolean HWRAPI(ReadScreenTexture) (INT32 x, INT32 y, INT32 width,

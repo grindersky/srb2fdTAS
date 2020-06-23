@@ -706,40 +706,25 @@ UINT8 *HWR_GetScreenshot(void)
 	return buf;
 }
 
-boolean HWR_Screenshot(const char *lbmname)
+boolean HWR_Screenshot(const char *pathname)
 {
-	int i;
 	boolean ret;
-	byte *bufw, *dest;
-	unsigned short *bufr, rgb565;
+	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
 
-	bufr = malloc(vid.width * vid.height * 2);
-	if (!bufr)
-		return false;
-	bufw = malloc(vid.width * vid.height * 3);
-	if (!bufw)
+	if (!buf)
 	{
-		free(bufr);
+		CONS_Printf("HWR_Screenshot: Failed to allocate memory\n");
 		return false;
 	}
 
-	// returns 16bit 565 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 2, bufr);
-
-	for (dest = bufw, i = 0; i < vid.width * vid.height; i++)
-	{
-		rgb565 = bufr[i];
-		*(dest++) = (byte)((rgb565 & 31) <<3);
-		*(dest++) = (byte)(((rgb565 >> 5) & 63) <<2);
-		*(dest++) = (byte)(((rgb565 >> 11) & 31) <<3);
-	}
-	free(bufr);
+	// returns 24bit 888 RGB
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
 
 #ifdef USE_PNG
-	ret = M_SavePNG(lbmname, bufw, vid.width, vid.height, NULL);
+	ret = M_SavePNG(pathname, buf, vid.width, vid.height, NULL);
 #else
-	ret = saveTGA(lbmname, bufw, vid.width, vid.height);
+	ret = saveTGA(pathname, buf, vid.width, vid.height);
 #endif
-	free(bufw);
+	free(buf);
 	return ret;
 }

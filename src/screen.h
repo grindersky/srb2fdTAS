@@ -37,7 +37,7 @@
 #if defined (DC) || defined (_WIN32_WCE) || defined (PSP)
 #define NUMSCREENS 2
 #else
-#define NUMSCREENS 4
+#define NUMSCREENS 5
 #endif
 
 // Size of statusbar.
