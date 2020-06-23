@@ -477,6 +477,7 @@ static void hwrconvert(void)
 			r = (UINT8)linear[i];
 			g = (UINT8)linear[i + 1];
 			b = (UINT8)linear[i + 2];
+			CONS_Printf("colorlookup %d %d %d\n", colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS]);
 			dest[(y * vid.width) + x] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
 		}
 	}

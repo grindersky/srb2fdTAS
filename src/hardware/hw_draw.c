@@ -703,7 +703,6 @@ UINT8 *HWR_GetScreenshot(void)
 		return NULL;
 	// returns 24bit 888 RGB
 	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
-	CONS_Printf("%d", buf);
 	return buf;
 }
 
