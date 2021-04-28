@@ -181,9 +181,9 @@ extern FILE *logstream;
 // Name of local directory for config files and savegames
 #ifndef _arch_dreamcast
 #if (defined (UNIXLIKE) && !defined (__CYGWIN__)) && !defined (__APPLE__)
-#define DEFAULTDIR ".srb2"
+#define DEFAULTDIR ".srb21094"
 #else
-#define DEFAULTDIR "srb2"
+#define DEFAULTDIR "srb21094"
 #endif
 #endif
 
