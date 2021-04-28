@@ -397,11 +397,13 @@ asm:
 
 $(BIN)/$(EXENAME): $(POS) $(OBJS)
 	-$(MKDIR) $(BIN)
-	$(call echo,Linking $(EXENAME)...)
+	@echo Linking $(EXENAME)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(BIN)/$(EXENAME) $(LIBS)
 
+	@echo Build is done, please look for $(EXENAME) in $(BIN)
+
 $(OBJDIR):
-	@mkdir -p $(OBJDIR)
+	-$(MKDIR) $(OBJDIR)
 
 ifndef SDL
 #dll
