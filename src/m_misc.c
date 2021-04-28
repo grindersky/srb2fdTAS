@@ -77,7 +77,14 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "zlib.h"
+#ifdef HAVE_SDL
+#include "sdl/hwsym_sdl.h"
+#ifdef __linux__
+#ifndef _LARGEFILE64_SOURCE
+typedef off_t off64_t;
+#endif
+#endif
+#endif
 
 #if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
 #define PRIdS "u"
@@ -89,9 +96,35 @@
 #define PRIdS "zu"
 #endif
 
-#if defined (PNG_WRITE_APNG_SUPPORTED) //|| !defined(PNG_STATIC)
-	#include "apng.h"
-	#define USE_APNG
+#ifdef HAVE_PNG
+
+#ifndef _MSC_VER
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+#endif
+
+#ifndef _LFS64_LARGEFILE
+#define _LFS64_LARGEFILE
+#endif
+
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 0
+#endif
+
+ #include "zlib.h"
+ #include "png.h"
+ #if (PNG_LIBPNG_VER_MAJOR > 1) || (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 4)
+  #define NO_PNG_DEBUG // 1.4.0 move png_debug to pngpriv.h
+ #endif
+ #ifdef PNG_WRITE_SUPPORTED
+  #define USE_PNG // Only actually use PNG if write is supported.
+  #if defined (PNG_WRITE_APNG_SUPPORTED) //|| !defined(PNG_STATIC)
+    #include "apng.h"
+    #define USE_APNG
+  #endif
+  // See hardware/hw_draw.c for a similar check to this one.
+ #endif
 #endif
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
