@@ -41,11 +41,10 @@
 
 #ifdef HAVE_IMAGE
 #include "SDL_image.h"
-#if 0
+#elif defined (__unix__) || (!defined(__APPLE__) && defined (UNIXLIKE)) // Windows & Mac don't need this, as SDL will do it for us.
 #define LOAD_XPM //I want XPM!
 #include "IMG_xpm.c" //Alam: I don't want to add SDL_Image.dll/so
 #define HAVE_IMAGE //I have SDL_Image, sortof
-#endif
 #endif
 
 #ifdef HAVE_IMAGE
