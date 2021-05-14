@@ -18,7 +18,6 @@
 #include "z_zone.h"
 #include "v_video.h"
 #include "i_video.h"
-#include "m_misc.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -33,7 +32,6 @@ consvar_t cv_gif_downscale =  {"gif_downscale", "On", CV_SAVE, CV_OnOff, NULL, 0
 #ifdef HAVE_ANIGIF
 static boolean gif_optimize = false; // So nobody can do something dumb
 static boolean gif_downscale = false; // like changing cvars mid output
-static RGBA_t *gif_palette = NULL;
 
 static FILE *gif_out = NULL;
 static INT32 gif_frames = 0;
@@ -402,6 +400,7 @@ static void GIF_headwrite(void)
 {
 	UINT8 *gifhead = Z_Malloc(800, PU_STATIC, NULL);
 	UINT8 *p = gifhead;
+	RGBA_t *c;
 	INT32 i;
 	UINT16 rwidth, rheight;
 
@@ -432,14 +431,12 @@ static void GIF_headwrite(void)
 	WRITEBYTE(p, 0x00);
 
 	// write color table
+	for (i = 0; i < 256; ++i)
 	{
-		RGBA_t *pal = gif_palette;
-		for (i = 0; i < 256; i++)
-		{
-			WRITEBYTE(p, pal[i].s.red);
-			WRITEBYTE(p, pal[i].s.green);
-			WRITEBYTE(p, pal[i].s.blue);
-		}
+		c = &pLocalPalette[i];
+		WRITEBYTE(p, c->s.red);
+		WRITEBYTE(p, c->s.green);
+		WRITEBYTE(p, c->s.blue);
 	}
 
 	// write extension block
@@ -460,26 +457,30 @@ static UINT8 *gifframe_data = NULL;
 static size_t gifframe_size = 8192;
 
 #ifdef HWRENDER
-static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
+static void hwrconvert(void)
 {
+	UINT8 *linear = HWR_GetScreenshot();
+	UINT8 *dest = screens[2];
 	UINT8 r, g, b;
-	size_t src = 0, dest = 0;
-	size_t size = (vid.width * vid.height * 3);
+	INT32 x, y;
+	size_t i = 0;
 
-	InitColorLUT(gif_palette);;
+	InitColorLUT();
 
-	while (src < size)
+	for (y = 0; y < vid.height; y++)
 	{
-		r = (UINT8)linear[src];
-		g = (UINT8)linear[src + 1];
-		b = (UINT8)linear[src + 2];
-		scr[dest] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
-		src += (3 * scrbuf_downscaleamt);
-		dest += scrbuf_downscaleamt;
+		for (x = 0; x < vid.width; x++, i += 3)
+		{
+			r = (UINT8)linear[i];
+			g = (UINT8)linear[i + 1];
+			b = (UINT8)linear[i + 2];
+			dest[(y * vid.width) + x] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
+		}
 	}
+
+	free(linear);
 }
 #endif
-
 
 //
 // GIF_framewrite
@@ -510,11 +511,7 @@ static void GIF_framewrite(void)
 			I_ReadScreen(movie_screen);
 #ifdef HWRENDER
 		else if (rendermode == render_opengl)
-		{
-			UINT8 *linear = HWR_GetScreenshot();
-			GIF_rgbconvert(linear, movie_screen);
-			free(linear);
-		}
+			hwrconvert();
 #endif
 	}
 	else
@@ -523,24 +520,21 @@ static void GIF_framewrite(void)
 		blitw = vid.width;
 		blith = vid.height;
 
-#ifdef HWRENDER
-		// Copy the current OpenGL frame into the base screen
-		if (rendermode == render_opengl)
+		if (gif_frames == 0)
 		{
-			UINT8 *linear = HWR_GetScreenshot();
-			GIF_rgbconvert(linear, screens[0]);
-			free(linear);
-		}
+			if (rendermode == render_soft)
+				I_ReadScreen(movie_screen);
+#ifdef HWRENDER
+			else if (rendermode == render_opengl)
+			{
+				hwrconvert();
+				VID_BlitLinearScreen(screens[2], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+			}
 #endif
-
-		// Copy the first frame into the movie screen
-		// OpenGL already does the same above.
-		if (gif_frames == 0 && rendermode == render_soft)
-			I_ReadScreen(movie_screen);
+		}
 
 		movie_screen = screens[0];
 	}
-
 
 	// screen regions are handled in GIF_lzw
 	{
@@ -641,16 +635,6 @@ INT32 GIF_open(const char *filename)
 
 	gif_optimize = (!!cv_gif_optimize.value);
 	gif_downscale = (!!cv_gif_downscale.value);
-
-	// GIF color table
-	// In hardware mode, uses the master palette
-	gif_palette = (
-#ifdef HWRENDER
-	(rendermode == render_opengl)
-#endif
-	? pLocalPalette
-	: pMasterPalette);
-	CONS_Printf("%s\n", gif_palette);
 	GIF_headwrite();
 	gif_frames = 0;
 	return 1;
