@@ -77,12 +77,6 @@ byte *scr_borderpatch; // flat used to fill the reduced view borders set at ST_I
 
 // =========================================================================
 
-#ifdef RUSEASM
-// tell asm code the new rowbytes value.
-void ASMCALL ASM_PatchRowBytes(int rowbytes);
-void ASMCALL MMX_PatchRowBytes(int rowbytes);
-#endif
-
 //  Short and Tall sky drawer, for the current color mode
 void (*skydrawerfunc)(void);
 
@@ -120,8 +114,8 @@ void SCR_SetMode(void)
 		if (R_ASM)
 		{
 			//colfunc = basecolfunc = R_DrawColumn_8_ASM;
-			shadecolfunc = R_DrawShadeColumn_8_ASM;
-			fuzzcolfunc = R_DrawTranslucentColumn_8_ASM;
+			//shadecolfunc = R_DrawShadeColumn_8_ASM;
+			//fuzzcolfunc = R_DrawTranslucentColumn_8_ASM;
 			//skydrawerfunc = R_DrawSkyColumn_8_ASM;
 		}
 		if (R_486)
@@ -212,13 +206,6 @@ void SCR_Startup(void)
 
 	vid.baseratio = FRACUNIT;
 
-#ifdef RUSEASM
-	if (R_ASM)
-		ASM_PatchRowBytes(vid.rowbytes);
-	if (R_486 || R_586 || R_MMX)
-		MMX_PatchRowBytes(vid.rowbytes);
-#endif
-
 	V_Init();
 	CV_RegisterVar(&cv_ticrate);
 
@@ -242,14 +229,6 @@ void SCR_Recalc(void)
 	vid.fdupx = (float)vid.width / BASEVIDWIDTH;
 	vid.fdupy = (float)vid.height / BASEVIDHEIGHT;
 	vid.baseratio = FixedDiv(vid.height << FRACBITS, BASEVIDHEIGHT << FRACBITS);
-
-	// patch the asm code depending on vid buffer rowbytes
-#ifdef RUSEASM
-	if (R_ASM)
-		ASM_PatchRowBytes(vid.rowbytes);
-	if (R_486 || R_586 || R_MMX)
-		MMX_PatchRowBytes(vid.rowbytes);
-#endif
 
 	// toggle off automap because some screensize-dependent values will
 	// be calculated next time the automap is activated.

@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief span / column drawer functions, for 8bpp and 16bpp
-/// 
+///
 ///	All drawing to the view buffer is accomplished in this file.
 ///	The other refresh files only know about ccordinates,
 ///	not the architecture of the frame buffer.
@@ -150,7 +150,7 @@ CV_PossibleValue_t Color_cons_t[] = {{0, NULL}, {1, NULL}, {2, NULL}, {3, NULL},
 
 	Creates the translation tables to map the green color ramp to
 	another ramp (gray, brown, red, ...)
- 
+
 	This is precalculated for drawing the player sprites in the player's
 	chosen color
 */
@@ -369,7 +369,7 @@ void R_InitTranslationTables(void)
 
 	\return	void
 
-	
+
 */
 void R_InitSkinTranslationTables(int starttranscolor, int endtranscolor, int skinnum)
 {
@@ -561,16 +561,16 @@ void R_InitSkinTranslationTables(int starttranscolor, int endtranscolor, int ski
 // put here
 
 /**	\brief	The R_InitViewBuffer function
- 
+
 	Creates lookup tables for getting the framebuffer address
 	of a pixel to draw.
- 
+
 	\param	width	witdh of buffer
 	\param	height	hieght of buffer
 
 	\return	void
 
-	
+
 */
 
 void R_InitViewBuffer(int width, int height)
@@ -625,7 +625,7 @@ void R_InitViewBorder(void)
 }
 
 /**	\brief R_FillBackScreen
- 
+
 	Fills the back screen with a pattern for variable screen sizes
 	Also draws a beveled edge.
 */
@@ -698,15 +698,15 @@ void R_FillBackScreen(void)
 }
 
 /**	\brief	The R_VideoErase function
- 
+
 	Copy a screen buffer.
- 
+
 	\param	ofs	offest from buffer
 	\param	count	bytes to erase
 
 	\return	void
 
-	
+
 */
 void R_VideoErase(unsigned ofs, int count)
 {
