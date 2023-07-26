@@ -583,101 +583,92 @@ static void ST_DrawNightsOverlayNum(int x /* right border */, int y, int num,
 	// Sorry chum, this function only draws UNSIGNED values!
 }
 
-static void ST_drawDebugInfo(void)
-{
-	char smomx[33];
-	char smomy[33];
-	char smomz[33];
-	char sspeed[33];
-	char sfloorz[33];
-	char spmomz[33];
-	char scability[33];
-	char scharsped[33];
-	char scharflags[33];
-	char sstrcolor[33];
-	char sendcolor[33];
-	char sdedtimer[33];
-	char sjumpfact[33];
-	char sx[33];
-	char sy[33];
-	char sz[33];
-	char sangle[33];
-	char sunderwater[33];
-	char smfjumped[33];
-	char smfspinning[33];
-	char smfstartdash[33];
-	char sjumping[33];
-	char sscoreadd[33];
+// PASRC's TAS Build
 
-	sprintf(smomx, "%d", stplyr->rmomx >> FRACBITS);
-	sprintf(smomy, "%d", stplyr->rmomy >> FRACBITS);
-	sprintf(smomz, "%d", stplyr->mo->momz >> FRACBITS);
-	sprintf(sspeed, "%d", stplyr->speed);
-	sprintf(sfloorz, "%d", stplyr->mo->floorz >> FRACBITS);
-	sprintf(spmomz, "%d", stplyr->mo->ceilingz >> FRACBITS);
-	sprintf(scability, "%d", stplyr->charability);
-	sprintf(scharsped, "%d", stplyr->normalspeed);
-	sprintf(scharflags, "%d", stplyr->charflags);
-	sprintf(sstrcolor, "%d", stplyr->starttranscolor);
-	sprintf(sendcolor, "%d", stplyr->endtranscolor);
-	sprintf(sdedtimer, "%d", stplyr->deadtimer);
-	sprintf(sjumpfact, "%d", stplyr->jumpfactor);
-	sprintf(sx, "%d", stplyr->mo->x >> FRACBITS);
-	sprintf(sy, "%d", stplyr->mo->y >> FRACBITS);
-	sprintf(sz, "%d", stplyr->mo->z >> FRACBITS);
-	sprintf(sangle, "%d", stplyr->mo->angle >> FRACBITS);
-	sprintf(sunderwater, "%d", stplyr->powers[pw_underwater]);
-	sprintf(smfjumped, "%d", stplyr->mfjumped);
-	sprintf(smfspinning, "%d", stplyr->mfspinning);
-	sprintf(smfstartdash, "%d", stplyr->mfstartdash);
-	sprintf(sjumping, "%d", stplyr->jumping);
-	sprintf(sscoreadd, "%d", stplyr->scoreadd);
-	V_DrawString(248, 0, 0, "MOMX =");
-	V_DrawString(296, 0, 0, smomx);
-	V_DrawString(248, 8, 0, "MOMY =");
-	V_DrawString(296, 8, 0, smomy);
-	V_DrawString(248, 16, 0, "MOMZ =");
-	V_DrawString(296, 16, 0, smomz);
-	V_DrawString(240, 24, 0, "SPEED =");
-	V_DrawString(296, 24, 0, sspeed);
-	V_DrawString(232, 32, 0, "FLOORZ=");
-	V_DrawString(288, 32, 0, sfloorz);
-	V_DrawString(240, 40, 0, "CEILZ =");
-	V_DrawString(296, 40, 0, spmomz);
-	V_DrawString(216, 48, 0, "CABILITY =");
-	V_DrawString(296, 48, 0, scability);
-	V_DrawString(216, 56, 0, "CHARSPED =");
-	V_DrawString(296, 56, 0, scharsped);
-	V_DrawString(216, 64, 0, "CHARFLGS =");
-	V_DrawString(296, 64, 0, scharflags);
-	V_DrawString(216, 72, 0, "STRCOLOR =");
-	V_DrawString(296, 72, 0, sstrcolor);
-	V_DrawString(216, 80, 0, "ENDCOLOR =");
-	V_DrawString(296, 80, 0, sendcolor);
-	V_DrawString(216, 88, 0, "DEDTIMER =");
-	V_DrawString(296, 88, 0, sdedtimer);
-	V_DrawString(216, 96, 0, "JUMPFACT =");
-	V_DrawString(296, 96, 0, sjumpfact);
-	V_DrawString(240, 104, 0, "X =");
-	V_DrawString(264, 104, 0, sx);
-	V_DrawString(240, 112, 0, "Y =");
-	V_DrawString(264, 112, 0, sy);
-	V_DrawString(240, 120, 0, "Z =");
-	V_DrawString(264, 120, 0, sz);
-	V_DrawString(216, 128, 0, "Angle =");
-	V_DrawString(272, 128, 0, sangle);
-	V_DrawString(192, 152, 0, "Underwater =");
-	V_DrawString(288, 152, 0, sunderwater);
-	V_DrawString(192, 160, 0, "MF_JUMPED =");
-	V_DrawString(288, 160, 0, smfjumped);
-	V_DrawString(192, 168, 0, "MF_SPINNING =");
-	V_DrawString(296, 168, 0, smfspinning);
-	V_DrawString(192, 176, 0, "MF_STARDASH =");
-	V_DrawString(296, 176, 0, smfstartdash);
-	V_DrawString(192, 184, 0, "Jumping =");
-	V_DrawString(288, 184, 0, sjumping);
-	V_DrawString(192, 192, 0, "Scoreadd =");
-	V_DrawString(288, 192, 0, sscoreadd);
+static void ST_drawInfo(void)
+{
+	INT32 height = 170, h = 8, w = 18, lowh;
+	void (*textfunc)(INT32, INT32, INT32, const char *);
+	player_t *tails = &players[consoleplayer+1];
+
+#define VFLAGS V_MONOSPACE|V_SNAPTOTOP|V_SNAPTORIGHT
+
+	/*if ((moviemode == MM_GIF && cv_gif_downscale.value) || vid.dupx == 1)
+	{
+		textfunc = V_DrawRightAlignedString;
+		lowh = ((vid.height/vid.dupx) - 16);
+	}
+	else
+	{*/
+		textfunc = V_DrawRightAlignedSmallString;
+		h /= 2;
+		w /= 2;
+		lowh = 0;
+	//}
+
+#define V_DrawDebugLine(str) if (lowh && (height > lowh))\
+					{\
+						V_DrawRightAlignedThinString(320, 8+lowh, VFLAGS|V_REDMAP, "SOME INFO NOT VISIBLE");\
+						return;\
+					}\
+					textfunc(320, height, VFLAGS, str);\
+					height -= h;
+	// If Sonic & Tails
+	if (tails->mo)
+	{
+		fixed_t distToSonic = P_AproxDistance(stplyr->mo->x - tails->mo->x, stplyr->mo->y - tails->mo->y);
+		angle_t angleTowardsSonic = R_PointToAngle2(tails->mo->x, tails->mo->y, stplyr->mo->x, stplyr->mo->y);
+		V_DrawDebugLine(va("Tails Z Pos: %5d  ", tails->mo->z>>FRACBITS));
+		V_DrawDebugLine(va("Tails Y Pos: %5d  ", tails->mo->y>>FRACBITS));
+		V_DrawDebugLine(va("Tails X Pos: %5d  ", tails->mo->x>>FRACBITS));
+		V_DrawDebugLine(va("Distance to Sonic: %5d  ", distToSonic>>FRACBITS));
+		V_DrawDebugLine(va("Angle towards Sonic: %5d  ", angleTowardsSonic>>FRACBITS));
+		V_DrawDebugLine(va("Facing Angle: %5d  ", tails->mo->angle>>FRACBITS));
+	}
+
+	// If not in NiGHTS stage
+	if (!(maptol & TOL_NIGHTS))
+	{
+		V_DrawDebugLine(va("SPEED: %5d  ", stplyr->speed>>FRACBITS));
+		V_DrawDebugLine(va("Z Pos: %5d  ", stplyr->mo->z>>FRACBITS));
+		if (stplyr->powers[pw_sneakers] > 0)
+		{
+			V_DrawDebugLine(va("Speed Shoes Timer: %5d  ", stplyr->powers[pw_sneakers]));
+		}
+		INT16 spinrevs = (6*(stplyr->dashspeed - stplyr->mindash))/(stplyr->maxdash - stplyr->mindash)+1;
+		if (spinrevs > 0)
+		{
+			V_DrawDebugLine(va("Spindash Revs: %5d  ", spinrevs));
+		}
+	}
+	// If in NiGHTS stage
+	else
+	{
+		V_DrawDebugLine(va("Z SPEED: %6d  ", stplyr->mo->momz>>FRACBITS));
+		V_DrawDebugLine(va("Y SPEED: %6d  ", stplyr->mo->momy>>FRACBITS));
+		V_DrawDebugLine(va("X SPEED: %6d  ", stplyr->mo->momx>>FRACBITS));
+		V_DrawDebugLine(va("A Req: %6d  ", mapheaderinfo[gamemap-1]->grades[stplyr->mare].grade[4]));
+		//V_DrawDebugLine(va("End total: %6d  ", (stplyr->marescore + stplyr->spheres * 50)));
+		//V_DrawDebugLine(va("End bonus: %6d  ", stplyr->spheres * 50));
+
+		if (stplyr->powers[pw_nights_superloop] > 0)
+		{
+			V_DrawDebugLine(va("Super Paraloop Timer: %5d  ", stplyr->powers[pw_nights_superloop]));
+		}
+	}
+
+	// Also if Sonic & Tails
+	if (tails->mo)
+	{
+		INT16 tailsspinrevs = (6*(tails->dashspeed - tails->mindash))/(tails->maxdash - tails->mindash)+1;
+		if (tailsspinrevs > 0)
+		{
+			V_DrawDebugLine(va("Tails Spindash Revs: %5d  ", tailsspinrevs));
+		}
+	}
+#undef V_DrawDebugFlag
+#undef V_DrawDebugLine
+#undef VFLAGS
 }
 
 static void ST_drawEggsNeeded(void)
