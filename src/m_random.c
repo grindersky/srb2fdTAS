@@ -153,3 +153,11 @@ void P_SetRandIndex(byte newrindex)
 {
 	prndindex = newrindex;
 }
+
+/** Fixes RNG seed, hopefully fixing desyncs in TAS runs.
+*/
+UINT32 M_RandomizedSeed(void)
+{
+    // return ((totalplaytime & 0xFFFF) << 16)|M_RandomFixed();
+  return 0xBADE4404;
+}
